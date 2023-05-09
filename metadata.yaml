@@ -27,7 +27,7 @@ provides:
     description: Links to grafana's own `/metrics` endpoint.
 
 requires:
-  default-database:
+  database:
     interface: mongodb_client
   smf-database:
     interface: mongodb_client

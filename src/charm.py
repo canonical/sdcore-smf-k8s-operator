@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 BASE_CONFIG_PATH = "/etc/smf"
 CONFIG_FILE_NAME = "smfcfg.yaml"
-UE_CONFIG_FILE_NAME = "uerouting.conf"
+UE_CONFIG_FILE = "uerouting.yaml"
 DATABASE_NAME = "free5gc"
 SMF_DATABASE_NAME = "sdcore_smf"
 SMF_SBI_PORT = 29502
@@ -54,7 +54,7 @@ class SMFOperatorCharm(CharmBase):
 
         # Databases libraries
         self._default_database = DatabaseRequires(
-            self, relation_name="default-database", database_name=DATABASE_NAME
+            self, relation_name="database", database_name=DATABASE_NAME
         )
         self._smf_database = DatabaseRequires(
             self, relation_name="smf-database", database_name=SMF_DATABASE_NAME
@@ -65,9 +65,7 @@ class SMFOperatorCharm(CharmBase):
         self.framework.observe(self.on.smf_pebble_ready, self._configure_sdcore_smf)
 
         # Database Hooks
-        self.framework.observe(
-            self.on.default_database_relation_joined, self._configure_sdcore_smf
-        )
+        self.framework.observe(self.on.database_relation_joined, self._configure_sdcore_smf)
         self.framework.observe(
             self._default_database.on.database_created, self._configure_sdcore_smf
         )
@@ -100,6 +98,7 @@ class SMFOperatorCharm(CharmBase):
 
     def _on_install(self, event: InstallEvent) -> None:
         if not self._container.can_connect():
+            self.unit.status = WaitingStatus("Waiting for container to be ready")
             event.defer()
             return
         self._write_ue_config_file()
@@ -150,6 +149,20 @@ class SMFOperatorCharm(CharmBase):
         self._container.replan()
         self.unit.status = ActiveStatus()
 
+    def _on_database_created(self, event: DatabaseCreatedEvent) -> None:
+        """Writes config file to workload container and configures pebble.
+
+        Args:
+            event: DatabaseCreatedEvent
+        """
+        if not self._container.can_connect():
+            event.defer()
+            return
+        self._write_config_file(
+            database_url=event.uris.split(",")[0],
+        )
+        self._configure_sdcore_smf(event)
+
     def _write_config_file(self, database_url: str, nrf_url: str) -> None:
         """Writes config file to workload.
 
@@ -162,20 +175,21 @@ class SMFOperatorCharm(CharmBase):
         # TODO: Fix config file params to write.
         content = template.render(
             nrf_url=nrf_url,
-            smf_url=self._smf_hostname,
-            pod_id=self._pod_id,  # type: ignore[attr-defined] # noqa: E501 TODO: remove.
-            default_database_url=DATABASE_NAME,
-            smf_database=SMF_DATABASE_NAME,
-            database_url=database_url,
+            smf_sbi_port=SMF_SBI_PORT,
+            default_databadefault_database_namese_url=DATABASE_NAME,
+            default_database_url=database_url,
+            # pod_id=self._pod_id,  # type: ignore[attr-defined] # noqa: E501 TODO: remove.
         )
         self._container.push(path=f"{BASE_CONFIG_PATH}/{CONFIG_FILE_NAME}", source=content)
         logger.info(f"Pushed: {CONFIG_FILE_NAME} to workload.")
 
     def _write_ue_config_file(self) -> None:
-        with open(f"src/{UE_CONFIG_FILE_NAME}", "r") as f:
+        with open(f"src/{UE_CONFIG_FILE}", "r") as f:
             content = f.read()
-        self._container.push(path=f"{BASE_CONFIG_PATH}/{UE_CONFIG_FILE_NAME}", source=content)
-        logger.info(f"Pushed {UE_CONFIG_FILE_NAME} config file to workload")
+
+        logger.warning(f"########## Content ##########:\n\n{content}\n\n#################")
+        self._container.push(path=f"{BASE_CONFIG_PATH}/{UE_CONFIG_FILE}", source=content)
+        logger.info(f"Pushed {UE_CONFIG_FILE} config file to workload")
 
     def _relation_created(self, relation_name: str) -> bool:
         """Returns whether a given Juju relation was crated.
@@ -203,8 +217,8 @@ class SMFOperatorCharm(CharmBase):
 
     @property
     def _ue_config_file_is_written(self) -> bool:
-        if not self._container.exists(f"{BASE_CONFIG_PATH}/{UE_CONFIG_FILE_NAME}"):
-            logger.info(f"Config file is not written: {UE_CONFIG_FILE_NAME}")
+        if not self._container.exists(f"{BASE_CONFIG_PATH}/{UE_CONFIG_FILE}"):
+            logger.info(f"Config file is not written: {UE_CONFIG_FILE}")
             return False
         logger.info("Config file is written")
         return True
@@ -216,7 +230,7 @@ class SMFOperatorCharm(CharmBase):
         Returns:
             bool: Whether database relation is created.
         """
-        return self._relation_created("default-database")
+        return self._relation_created("database")
 
     @property
     def _smf_database_relation_is_created(self) -> bool:

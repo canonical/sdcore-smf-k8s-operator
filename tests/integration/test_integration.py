@@ -20,7 +20,9 @@ APP_NAME = METADATA["name"]
 @pytest.mark.abort_on_fail
 async def build_and_deploy(ops_test):
     """Build the charm-under-test and deploy it."""
-    charm = await ops_test.build_charm(".")
+    # TODO: Change when pushing.
+    # charm = await ops_test.build_charm(".")
+    charm = "./sdcore-smf-operator_ubuntu-22.04-amd64.charm"
     resources = {
         "smf-image": METADATA["resources"]["smf-image"]["upstream-source"],
     }

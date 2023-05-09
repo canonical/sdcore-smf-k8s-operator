@@ -13,9 +13,9 @@ configuration:
   enableUPFAdapter: true
   debugProfilePort: 5001
   mongodb:
-    name: {{ database_name }}
+    name: {{ default_database_name }}
     # name: sdcore_smf
-    url: {{ database_url }}
+    url: {{ default_database_url }}
     # url: "mongodb://mongodb-arbiter-headless"
   kafkaInfo:
     brokerUri: "sd-core-kafka-headless"
@@ -41,9 +41,9 @@ configuration:
     bindingIPv4: smf # IP used to bind the service
     port: {{ smf_sbi_port }} # Port used to bind the service
     # TODO: Do we need to hadle certs right now?
-    tls: # the local path of TLS key
-      key: free5gc/support/TLS/smf.key # SMF TLS Certificate
-      pem: free5gc/support/TLS/smf.pem # SMF TLS Private key
+    # tls: # the local path of TLS key
+    #   key: free5gc/support/TLS/smf.key # SMF TLS Certificate
+    #   pem: free5gc/support/TLS/smf.pem # SMF TLS Private key
   serviceNameList: # the SBI services provided by this SMF, refer to TS 29.502
     - nsmf-pdusession # Nsmf_PDUSession service
     - nsmf-event-exposure # Nsmf_EventExposure service
@@ -99,7 +99,8 @@ configuration:
     links: # the topology graph of userplane, A and B represent the two nodes of each link
       - A: gNB
         B: UPF1
-  nrfUri: http://nrf:29510 # a valid URI of NRF
+  # nrfUri: http://nrf:29510 # a valid URI of NRF
+  nrfUri: {{ nrf_url }} # a valid URI of NRF
 
 # the kind of log output
 # debugLevel: how detailed to output, value: trace, debug, info, warn, error, fatal, panic
