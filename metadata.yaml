@@ -6,7 +6,7 @@ description: Charmed Operator for the SDCORE Session Management Function (SMF).
 containers:
   smf:
     resource: smf-image
-    mounts: # TODO: Check mount point if issues with config
+    mounts:
       - storage: config
         location: /etc/smf
 
@@ -31,5 +31,5 @@ requires:
     interface: mongodb_client
   smf-database:
     interface: mongodb_client
-  nrf:
-    interface: nrf
+  fiveg-nrf:
+    interface: fiveg-nrf

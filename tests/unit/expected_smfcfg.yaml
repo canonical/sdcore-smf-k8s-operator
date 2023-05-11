@@ -13,8 +13,8 @@ configuration:
   enableUPFAdapter: true
   debugProfilePort: 5001
   mongodb:
-    name: {{ database_name }}
-    url: {{ database_url }}
+    name: free5gc
+    url: http://6.5.6.5
   kafkaInfo:
     brokerUri: "sd-core-kafka-headless"
     brokerPort: 9092
@@ -35,9 +35,9 @@ configuration:
   smfName: SMF # the name of this SMF
   sbi: # Service-based interface information
     scheme: http # the protocol for sbi (http or https)
-    registerIPv4: {{ smf_url }} # IP used to register to NRF
+    registerIPv4: sdcore-smf-operator.whatever.svc.cluster.local # IP used to register to NRF
     bindingIPv4: smf # IP used to bind the service
-    port: {{ smf_sbi_port }} # Port used to bind the service
+    port: 29502 # Port used to bind the service
     tls: # the local path of TLS key
       key: free5gc/support/TLS/smf.key # SMF TLS Certificate
       pem: free5gc/support/TLS/smf.pem # SMF TLS Private key
@@ -73,7 +73,7 @@ configuration:
         mcc: "333"
         mnc: "444"
   pfcp: # the IP address of N4 interface on this SMF (PFCP)
-    addr: {{ pod_ip }}
+    addr: 1.1.1.1
   userplane_information: # list of userplane information
     up_nodes: # information of userplane node (AN or UPF)
       gNB: # the name of the node
@@ -96,7 +96,7 @@ configuration:
     links: # the topology graph of userplane, A and B represent the two nodes of each link
       - A: gNB
         B: UPF1
-  nrfUri: {{ nrf_url }} # a valid URI of NRF
+  nrfUri: http://1.1.1.1 # a valid URI of NRF
 
 # the kind of log output
 # debugLevel: how detailed to output, value: trace, debug, info, warn, error, fatal, panic
@@ -123,4 +123,3 @@ logger:
   PFCP:
     debugLevel: debug
     ReportCaller: false
-
