@@ -96,7 +96,7 @@ configuration:
     links: # the topology graph of userplane, A and B represent the two nodes of each link
       - A: gNB
         B: UPF1
-  nrfUri: http://1.1.1.1 # a valid URI of NRF
+  nrfUri: http://nrf.com:8080 # a valid URI of NRF
 
 # the kind of log output
 # debugLevel: how detailed to output, value: trace, debug, info, warn, error, fatal, panic

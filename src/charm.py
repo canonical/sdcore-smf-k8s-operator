@@ -20,8 +20,6 @@ from charms.observability_libs.v1.kubernetes_service_patch import (  # type: ign
 from charms.prometheus_k8s.v0.prometheus_scrape import (  # type: ignore[import]  # noqa: E501
     MetricsEndpointProvider,
 )
-
-# TODO: Publish the lib
 from charms.sdcore_nrf.v0.fiveg_nrf import (  # type: ignore[import]  # noqa: E501
     NRFAvailableEvent,
     NRFRequires,
@@ -137,9 +135,7 @@ class SMFOperatorCharm(CharmBase):
             event.defer()
             self.unit.status = WaitingStatus("Waiting for NRF relation to be available")
             return
-        if (
-            not self._ue_config_file_is_written
-        ):  # TODO: this should never be true, because we are writing the config file in the install hook
+        if not self._ue_config_file_is_written:
             event.defer()
             self.unit.status = WaitingStatus(
                 f"Waiting for `{UE_CONFIG_FILE}` config file to be pushed to workload container"
