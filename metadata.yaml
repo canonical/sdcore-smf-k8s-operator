@@ -31,5 +31,5 @@ requires:
     interface: mongodb_client
   smf-database:
     interface: mongodb_client
-  fiveg-nrf:
-    interface: fiveg-nrf
+  fiveg_nrf:
+    interface: fiveg_nrf

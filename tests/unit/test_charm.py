@@ -89,7 +89,7 @@ class TestCharm(unittest.TestCase):
             int: relation id.
         """
         relation_id = self.harness.add_relation(
-            relation_name="fiveg-nrf", remote_app="nrf-operator"
+            relation_name="fiveg_nrf", remote_app="nrf-operator"
         )
         self.harness.add_relation_unit(relation_id=relation_id, remote_unit_name="nrf-operator/0")
         return relation_id

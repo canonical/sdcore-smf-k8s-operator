@@ -50,10 +50,8 @@ class SMFOperatorCharm(CharmBase):
         self._container_name = self._service_name = "smf"
         self._container = self.unit.get_container(self._container_name)
 
-        # NRF endpoint
-        self._nrf_requires = NRFRequires(charm=self, relation_name="fiveg-nrf")
+        self._nrf_requires = NRFRequires(charm=self, relation_name="fiveg_nrf")
 
-        # Databases libraries
         self._database = DatabaseRequires(
             self, relation_name="database", database_name=DATABASE_NAME
         )
@@ -61,21 +59,17 @@ class SMFOperatorCharm(CharmBase):
             self, relation_name="smf-database", database_name=SMF_DATABASE_NAME
         )
 
-        # Basic hooks
         self.framework.observe(self.on.install, self._on_install)
         self.framework.observe(self.on.smf_pebble_ready, self._configure_sdcore_smf)
 
-        # Database Hooks
         self.framework.observe(self.on.database_relation_joined, self._configure_sdcore_smf)
         self.framework.observe(self._database.on.database_created, self._configure_sdcore_smf)
         self.framework.observe(self.on.smf_database_relation_joined, self._configure_sdcore_smf)
         self.framework.observe(self._smf_database.on.database_created, self._configure_sdcore_smf)
 
-        # NRF Hooks
         self.framework.observe(self.on.fiveg_nrf_relation_joined, self._configure_sdcore_smf)
         self.framework.observe(self._nrf_requires.on.nrf_available, self._configure_sdcore_smf)
 
-        # Kubernetes service patch
         self._service_patcher = KubernetesServicePatch(
             charm=self,
             ports=[
@@ -85,7 +79,6 @@ class SMFOperatorCharm(CharmBase):
             ],
         )
 
-        # Metrics endpoint
         self._metrics_endpoint = MetricsEndpointProvider(
             self,
             jobs=[
@@ -239,7 +232,7 @@ class SMFOperatorCharm(CharmBase):
         Returns:
             bool: Whether database relation is created.
         """
-        return self._relation_created("fiveg-nrf")
+        return self._relation_created("fiveg_nrf")
 
     @property
     def _nrf_is_available(self) -> bool:
