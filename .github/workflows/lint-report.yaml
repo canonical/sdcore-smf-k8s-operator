@@ -1,0 +1,14 @@
+name: Lint report
+
+on:
+  workflow_call:
+
+jobs:
+  lint-report:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install tox
+        run: pip install tox
+      - name: Run tests using tox
+        run: tox -e lint

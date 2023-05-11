@@ -1,0 +1,24 @@
+name: Push
+
+on:
+  push:
+
+jobs:
+  lint-report:
+    uses: ./.github/workflows/lint-report.yaml
+
+  static-analysis:
+    uses: ./.github/workflows/static-analysis.yaml
+
+  unit-tests-with-coverage:
+    uses: ./.github/workflows/unit-test.yaml
+
+  integration-test:
+    uses: ./.github/workflows/integration-test.yaml
+
+  publish-charm:
+    name: Publish Charm
+    needs:
+      [lint-report, static-analysis, unit-tests-with-coverage, integration-test]
+    if: ${{ github.ref_name == 'main' }}
+    uses: ./.github/workflows/publish-charm.yaml
