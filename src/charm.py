@@ -9,22 +9,19 @@ import logging
 from ipaddress import IPv4Address
 from subprocess import check_output
 from typing import Optional
-from ops.framework import EventBase
 
-from charms.data_platform_libs.v0.data_interfaces import (  # type: ignore[import]
-    DatabaseCreatedEvent,
-    DatabaseRequires,
-)
+from charms.data_platform_libs.v0.data_interfaces import DatabaseRequires  # type: ignore[import]
 from charms.observability_libs.v1.kubernetes_service_patch import (  # type: ignore[import]  # noqa: E501
     KubernetesServicePatch,
 )
 from charms.prometheus_k8s.v0.prometheus_scrape import (  # type: ignore[import]  # noqa: E501
     MetricsEndpointProvider,
 )
-from charms.sdcore_nrf.v0.fiveg_nrf import NRFAvailableEvent, NRFRequires  # type: ignore[import]
+from charms.sdcore_nrf.v0.fiveg_nrf import NRFRequires  # type: ignore[import]
 from jinja2 import Environment, FileSystemLoader
 from lightkube.models.core_v1 import ServicePort
-from ops.charm import CharmBase, InstallEvent, PebbleReadyEvent
+from ops.charm import CharmBase, InstallEvent
+from ops.framework import EventBase
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
 
@@ -93,9 +90,7 @@ class SMFOperatorCharm(CharmBase):
             return
         self._write_ue_config_file()
 
-    def _configure_sdcore_smf(
-        self, event: EventBase
-    ) -> None:
+    def _configure_sdcore_smf(self, event: EventBase) -> None:
         """Adds pebble layer and manages Juju unit status.
 
         Args:
@@ -112,7 +107,6 @@ class SMFOperatorCharm(CharmBase):
             return
         if not self._container.can_connect():
             self.unit.status = WaitingStatus("Waiting for container to be ready")
-            event.defer()
             return
         if not self._database_is_available:
             self.unit.status = WaitingStatus("Waiting for database relation to be available")
@@ -126,7 +120,7 @@ class SMFOperatorCharm(CharmBase):
         if not self._ue_config_file_is_written:
             event.defer()
             self.unit.status = WaitingStatus(
-                f"Waiting for `{UEROUTING_CONFIG_FILE}` config file to be pushed to workload container"
+                f"Waiting for `{UEROUTING_CONFIG_FILE}` config file to be pushed to workload container"  # noqa: W505, E501
             )
             return
         if not self._config_file_is_written:
