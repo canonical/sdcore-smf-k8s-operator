@@ -14,7 +14,7 @@ resources:
   smf-image:
     type: oci-image
     description: OCI image for 5G SMF
-    upstream-source: omecproject/5gc-smf:master-4ad802a
+    upstream-source: omecproject/5gc-smf:master-13e5671
 
 storage:
   config:

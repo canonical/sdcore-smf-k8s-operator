@@ -10,4 +10,4 @@ juju deploy sdcore-smf --trust --channel=edge
 
 ## Image
 
-- **smf**: `omecproject/5gc-smf:master-4ad802a`
+- **smf**: `omecproject/5gc-smf:master-13e5671`

@@ -8,7 +8,8 @@
 import logging
 from ipaddress import IPv4Address
 from subprocess import check_output
-from typing import Dict, Optional, Union
+from typing import Optional
+from ops.framework import EventBase
 
 from charms.data_platform_libs.v0.data_interfaces import (  # type: ignore[import]
     DatabaseCreatedEvent,
@@ -20,10 +21,7 @@ from charms.observability_libs.v1.kubernetes_service_patch import (  # type: ign
 from charms.prometheus_k8s.v0.prometheus_scrape import (  # type: ignore[import]  # noqa: E501
     MetricsEndpointProvider,
 )
-from charms.sdcore_nrf.v0.fiveg_nrf import (  # type: ignore[import]  # noqa: E501
-    NRFAvailableEvent,
-    NRFRequires,
-)
+from charms.sdcore_nrf.v0.fiveg_nrf import NRFAvailableEvent, NRFRequires  # type: ignore[import]
 from jinja2 import Environment, FileSystemLoader
 from lightkube.models.core_v1 import ServicePort
 from ops.charm import CharmBase, InstallEvent, PebbleReadyEvent
@@ -34,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 BASE_CONFIG_PATH = "/etc/smf"
 CONFIG_FILE = "smfcfg.yaml"
-UE_CONFIG_FILE = "uerouting.yaml"
+UEROUTING_CONFIG_FILE = "uerouting.yaml"
 DATABASE_NAME = "free5gc"
 SMF_DATABASE_NAME = "sdcore_smf"
 SMF_SBI_PORT = 29502
@@ -96,7 +94,7 @@ class SMFOperatorCharm(CharmBase):
         self._write_ue_config_file()
 
     def _configure_sdcore_smf(
-        self, event: Union[PebbleReadyEvent, DatabaseCreatedEvent, NRFAvailableEvent]
+        self, event: EventBase
     ) -> None:
         """Adds pebble layer and manages Juju unit status.
 
@@ -117,21 +115,18 @@ class SMFOperatorCharm(CharmBase):
             event.defer()
             return
         if not self._database_is_available:
-            event.defer()
             self.unit.status = WaitingStatus("Waiting for database relation to be available")
             return
         if not self._smf_database_is_available:
-            event.defer()
             self.unit.status = WaitingStatus("Waiting for SMF database relation to be available")
             return
         if not self._nrf_is_available:
-            event.defer()
             self.unit.status = WaitingStatus("Waiting for NRF relation to be available")
             return
         if not self._ue_config_file_is_written:
             event.defer()
             self.unit.status = WaitingStatus(
-                f"Waiting for `{UE_CONFIG_FILE}` config file to be pushed to workload container"
+                f"Waiting for `{UEROUTING_CONFIG_FILE}` config file to be pushed to workload container"
             )
             return
         if not self._config_file_is_written:
@@ -166,14 +161,14 @@ class SMFOperatorCharm(CharmBase):
             pod_ip=self._pod_ip,
         )
         self._container.push(path=f"{BASE_CONFIG_PATH}/{CONFIG_FILE}", source=content)
-        logger.info(f"Pushed: {CONFIG_FILE} to workload.")
+        logger.info("Pushed: %s to workload.", CONFIG_FILE)
 
     def _write_ue_config_file(self) -> None:
-        with open(f"src/{UE_CONFIG_FILE}", "r") as f:
+        with open(f"src/{UEROUTING_CONFIG_FILE}", "r") as f:
             content = f.read()
 
-        self._container.push(path=f"{BASE_CONFIG_PATH}/{UE_CONFIG_FILE}", source=content)
-        logger.info(f"Pushed {UE_CONFIG_FILE} config file to workload")
+        self._container.push(path=f"{BASE_CONFIG_PATH}/{UEROUTING_CONFIG_FILE}", source=content)
+        logger.info("Pushed %s config file to workload", UEROUTING_CONFIG_FILE)
 
     def _relation_created(self, relation_name: str) -> bool:
         """Returns whether a given Juju relation was crated.
@@ -194,17 +189,17 @@ class SMFOperatorCharm(CharmBase):
             bool: Whether the config file was written.
         """
         if not self._container.exists(f"{BASE_CONFIG_PATH}/{CONFIG_FILE}"):
-            logger.info(f"Config file `{CONFIG_FILE}` is not written")
+            logger.info("Config file %s is not written", CONFIG_FILE)
             return False
-        logger.info("Config file `{CONFIG_FILE}` is written")
+        logger.info("Config file %s is written", CONFIG_FILE)
         return True
 
     @property
     def _ue_config_file_is_written(self) -> bool:
-        if not self._container.exists(f"{BASE_CONFIG_PATH}/{UE_CONFIG_FILE}"):
-            logger.info(f"Config file `{UE_CONFIG_FILE}` is not written")
+        if not self._container.exists(f"{BASE_CONFIG_PATH}/{UEROUTING_CONFIG_FILE}"):
+            logger.info("Config file %s is not written", UEROUTING_CONFIG_FILE)
             return False
-        logger.info("Config file `{UE_CONFIG_FILE}` is written")
+        logger.info("Config file %s is written", UEROUTING_CONFIG_FILE)
         return True
 
     @property
@@ -271,18 +266,18 @@ class SMFOperatorCharm(CharmBase):
         return True
 
     @property
-    def _smf_database_data(self) -> Dict:
+    def _smf_database_data(self) -> dict:
         """Returns the database data.
 
         Returns:
-            Dict: The database data.
+            dict: The database data.
         """
         if not self._smf_database_is_available:
             raise RuntimeError("SMF database is not available")
         return self._smf_database.fetch_relation_data()[self._smf_database.relations[0].id]
 
     @property
-    def _pebble_layer(self):
+    def _pebble_layer(self) -> dict:
         """Return a dictionary representing a Pebble layer.
 
         Returns:
@@ -296,7 +291,7 @@ class SMFOperatorCharm(CharmBase):
                     "override": "replace",
                     "startup": "enabled",
                     "command": f"/free5gc/smf/smf -smfcfg {BASE_CONFIG_PATH}/{CONFIG_FILE} "
-                    f"-uerouting {BASE_CONFIG_PATH}/{UE_CONFIG_FILE}",
+                    f"-uerouting {BASE_CONFIG_PATH}/{UEROUTING_CONFIG_FILE}",
                     "environment": self._environment_variables,
                 }
             },

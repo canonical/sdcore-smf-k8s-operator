@@ -1,4 +1,4 @@
-# Copyright 2023 Ubuntu
+# Copyright 2023 Canonical
 # See LICENSE file for licensing details.
 
 import logging
@@ -94,17 +94,6 @@ class TestCharm(unittest.TestCase):
         self.harness.add_relation_unit(relation_id=relation_id, remote_unit_name="nrf-operator/0")
         return relation_id
 
-    def test_given_container_cant_connect_when_on_install_then_status_is_waiting(
-        self,
-    ):
-        self.harness.set_can_connect(container=self.container_name, val=False)
-
-        self.harness.charm._on_install(event=Mock())
-
-        self.assertEqual(
-            self.harness.model.unit.status, WaitingStatus("Waiting for container to be ready")
-        )
-
     def _database_is_available(self) -> str:
         database_url = "http://6.6.6.6"
         database_username = "banana"
@@ -136,6 +125,17 @@ class TestCharm(unittest.TestCase):
             },
         )
         return smf_database_url
+
+    def test_given_container_cant_connect_when_on_install_then_status_is_waiting(
+        self,
+    ):
+        self.harness.set_can_connect(container=self.container_name, val=False)
+
+        self.harness.charm._on_install(event=Mock())
+
+        self.assertEqual(
+            self.harness.model.unit.status, WaitingStatus("Waiting for container to be ready")
+        )
 
     @patch("ops.model.Container.push")
     def test_given_container_can_connect_when_on_install_then_ue_config_file_is_written_to_workload_container(  # noqa: E501
@@ -318,7 +318,7 @@ class TestCharm(unittest.TestCase):
     @patch("ops.model.Container.push")
     @patch("charm.check_output")
     @patch("ops.model.Container.exists")
-    def test_given_config_files_and_relations_are_created_when_configure_sdcore_smf_is_called_then_pebble_plan_is_the_expected(  # noqa: E501
+    def test_given_config_files_and_relations_are_created_when_configure_sdcore_smf_is_called_then_expected_plan_is_applied(  # noqa: E501
         self, patch_exists, patch_check_output, patch_push, patch_get_nrf_url
     ):
         pod_ip = "1.1.1.1"
