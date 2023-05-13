@@ -5,7 +5,10 @@ on:
 
 jobs:
   publish-charm:
+    name: Publish Charm
+    needs: integration-test
     runs-on: ubuntu-22.04
+    if: ${{ github.event_name == 'push' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -20,22 +23,7 @@ jobs:
       - name: Select Charmhub channel
         uses: canonical/charming-actions/channel@2.2.5
         id: channel
-      - name: Upload charm to Charmhub
-        uses: canonical/charming-actions/upload-charm@2.2.5
-        with:
-          credentials: "${{ secrets.CHARMCRAFT_AUTH }}"
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
-          upload-image: "true"
-          channel: "${{ steps.channel.outputs.name }}"
-
-      - name: Chmod charmcraft logs
-        if: steps.upload.conclusion == 'failure'
-        run: |
-          sudo chmod -R 777 /root/snap/charmcraft/common/cache/charmcraft/log/
-
-      - name: Archive charmcraft logs
-        if: steps.upload.conclusion == 'failure'
-        uses: actions/upload-artifact@v3
-        with:
-          name: charmcraft-upload-logs
-          path: /root/snap/charmcraft/common/cache/charmcraft/log/*.log
+      - name: Upload charm to Charmhub edge channel
+        env:
+          CHARMCRAFT_AUTH: "${{ secrets.CHARMHUB_TOKEN }}"
+        run: charmcraft upload ./sdcore-smf_ubuntu-22.04-amd64.charm --release ${{ steps.channel.outputs.name }}
