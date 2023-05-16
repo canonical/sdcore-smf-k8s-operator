@@ -173,7 +173,7 @@ class TestCharm(unittest.TestCase):
             BlockedStatus("Waiting for SMF database relation to be created"),
         )
 
-    def test_given_nrf_reltion_not_created_when_configure_sdcore_smf_is_called_then_status_is_blocked(  # noqa: E501
+    def test_given_nrf_relation_not_created_when_configure_sdcore_smf_is_called_then_status_is_blocked(  # noqa: E501
         self,
     ):
         self._create_database_relation()

@@ -84,6 +84,11 @@ class SMFOperatorCharm(CharmBase):
         )
 
     def _on_install(self, event: InstallEvent) -> None:
+        """Handles the install event.
+
+        Args:
+            event (InstallEvent): Juju event.
+        """
         if not self._container.can_connect():
             self.unit.status = WaitingStatus("Waiting for container to be ready")
             event.defer()
@@ -124,10 +129,13 @@ class SMFOperatorCharm(CharmBase):
             )
             return
         if not self._config_file_is_written:
-            logger.warning("Writing config file")
             self._write_config_file(
+                database_name=DATABASE_NAME,
                 database_url=self._smf_database_data["uris"].split(",")[0],
+                smf_url=self._smf_hostname,
+                smf_sbi_port=SMF_SBI_PORT,
                 nrf_url=self._nrf_requires.get_nrf_url(),
+                pod_ip=str(self._pod_ip),
             )
         self._configure_pebble()
 
@@ -137,27 +145,40 @@ class SMFOperatorCharm(CharmBase):
         self._container.replan()
         self.unit.status = ActiveStatus()
 
-    def _write_config_file(self, database_url: str, nrf_url: str) -> None:
+    def _write_config_file(
+        self,
+        database_name: str,
+        database_url: str,
+        smf_url: str,
+        smf_sbi_port: int,
+        nrf_url: str,
+        pod_ip: str,
+    ) -> None:
         """Writes config file to workload.
 
         Args:
-            database_url (str): Database URL
-            nrf_url (str): NRF URL
+            database_name (str): Database name.
+            database_url (str): Database URL.
+            smf_url (str): SMF URL.
+            smf_sbi_port (int): SMF SBI port.
+            nrf_url (str): NRF URL.
+            pod_ip (IPv4Address): Pod IP address.
         """
         jinja2_env = Environment(loader=FileSystemLoader("src/templates"))
         template = jinja2_env.get_template("smfcfg.yaml.j2")
         content = template.render(
             database_name=DATABASE_NAME,
             database_url=database_url,
-            smf_url=self._smf_hostname,
-            smf_sbi_port=SMF_SBI_PORT,
+            smf_url=smf_url,
+            smf_sbi_port=smf_sbi_port,
             nrf_url=nrf_url,
-            pod_ip=self._pod_ip,
+            pod_ip=pod_ip,
         )
         self._container.push(path=f"{BASE_CONFIG_PATH}/{CONFIG_FILE}", source=content)
         logger.info("Pushed: %s to workload.", CONFIG_FILE)
 
     def _write_ue_config_file(self) -> None:
+        """Writes UE config file to workload."""
         with open(f"src/{UEROUTING_CONFIG_FILE}", "r") as f:
             content = f.read()
 
@@ -182,19 +203,16 @@ class SMFOperatorCharm(CharmBase):
         Returns:
             bool: Whether the config file was written.
         """
-        if not self._container.exists(f"{BASE_CONFIG_PATH}/{CONFIG_FILE}"):
-            logger.info("Config file %s is not written", CONFIG_FILE)
-            return False
-        logger.info("Config file %s is written", CONFIG_FILE)
-        return True
+        return bool(self._container.exists(f"{BASE_CONFIG_PATH}/{CONFIG_FILE}"))
 
     @property
     def _ue_config_file_is_written(self) -> bool:
-        if not self._container.exists(f"{BASE_CONFIG_PATH}/{UEROUTING_CONFIG_FILE}"):
-            logger.info("Config file %s is not written", UEROUTING_CONFIG_FILE)
-            return False
-        logger.info("Config file %s is written", UEROUTING_CONFIG_FILE)
-        return True
+        """Returns whether the config file was written to the workload container.
+
+        Returns:
+            bool: Whether the config file was written.
+        """
+        return bool(self._container.exists(f"{BASE_CONFIG_PATH}/{UEROUTING_CONFIG_FILE}"))
 
     @property
     def _database_relation_is_created(self) -> bool:
@@ -230,10 +248,7 @@ class SMFOperatorCharm(CharmBase):
         Returns:
             bool: whether the NRF endpoint is available.
         """
-        if not self._nrf_requires.get_nrf_url():
-            logger.info("NRF endpoint is not available")
-            return False
-        return True
+        return bool(self._nrf_requires.get_nrf_url())
 
     @property
     def _database_is_available(self) -> bool:
@@ -242,10 +257,7 @@ class SMFOperatorCharm(CharmBase):
         Returns:
             bool: Whether database relation is available.
         """
-        if not self._database.is_resource_created():
-            logger.info("Database is not available")
-            return False
-        return True
+        return bool(self._database.is_resource_created())
 
     @property
     def _smf_database_is_available(self) -> bool:
@@ -254,10 +266,7 @@ class SMFOperatorCharm(CharmBase):
         Returns:
             bool: Whether database relation is available.
         """
-        if not self._smf_database.is_resource_created():
-            logger.info("SMF database is not available")
-            return False
-        return True
+        return bool(self._smf_database.is_resource_created())
 
     @property
     def _smf_database_data(self) -> dict:
