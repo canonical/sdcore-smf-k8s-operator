@@ -12,3 +12,4 @@ pytest-operator
 types-PyYAML
 types-setuptools
 types-toml
+pytest-interface-tester

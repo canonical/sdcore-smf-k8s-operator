@@ -156,6 +156,7 @@ class SMFOperatorCharm(CharmBase):
 
     def _write_config_file(
         self,
+        *,
         default_database_name: str,
         default_database_url: str,
         smf_database_name: str,
