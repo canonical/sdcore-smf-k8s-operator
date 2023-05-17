@@ -22,7 +22,7 @@ class TestCharm(unittest.TestCase):
     def setUp(self):
         self.maxDiff = None
         self.namespace = "whatever"
-        self.database_application_name = "mongodb-k8s"
+        self.default_database_application_name = "mongodb-k8s"
         self.metadata = self._get_metadata()
         self.container_name = list(self.metadata["containers"].keys())[0]
         self.harness = testing.Harness(SMFOperatorCharm)
@@ -54,17 +54,17 @@ class TestCharm(unittest.TestCase):
 
         return content
 
-    def _create_database_relation(self) -> int:
+    def _create_default_database_relation(self) -> int:
         """Creates database relation.
 
         Returns:
             int: relation id.
         """
         relation_id = self.harness.add_relation(
-            relation_name="database", remote_app=self.database_application_name
+            relation_name="default-database", remote_app=self.default_database_application_name
         )
         self.harness.add_relation_unit(
-            relation_id=relation_id, remote_unit_name=f"{self.database_application_name}/0"
+            relation_id=relation_id, remote_unit_name=f"{self.default_database_application_name}/0"
         )
         return relation_id
 
@@ -75,10 +75,10 @@ class TestCharm(unittest.TestCase):
             int: relation id.
         """
         relation_id = self.harness.add_relation(
-            relation_name="smf-database", remote_app=self.database_application_name
+            relation_name="smf-database", remote_app=self.default_database_application_name
         )
         self.harness.add_relation_unit(
-            relation_id=relation_id, remote_unit_name=f"{self.database_application_name}/0"
+            relation_id=relation_id, remote_unit_name=f"{self.default_database_application_name}/0"
         )
         return relation_id
 
@@ -98,10 +98,10 @@ class TestCharm(unittest.TestCase):
         database_url = "http://6.6.6.6"
         database_username = "banana"
         database_password = "pizza"
-        database_relation_id = self._create_database_relation()
+        database_relation_id = self._create_default_database_relation()
         self.harness.update_relation_data(
             relation_id=database_relation_id,
-            app_or_unit=self.database_application_name,
+            app_or_unit=self.default_database_application_name,
             key_values={
                 "username": database_username,
                 "password": database_password,
@@ -117,7 +117,7 @@ class TestCharm(unittest.TestCase):
         smf_database_relation_id = self._create_smf_database_relation()
         self.harness.update_relation_data(
             relation_id=smf_database_relation_id,
-            app_or_unit=self.database_application_name,
+            app_or_unit=self.default_database_application_name,
             key_values={
                 "username": smf_database_username,
                 "password": smf_database_password,
@@ -158,25 +158,25 @@ class TestCharm(unittest.TestCase):
 
         self.assertEqual(
             self.harness.model.unit.status,
-            BlockedStatus("Waiting for database relation to be created"),
+            BlockedStatus("Waiting for `default-database` relation to be created"),
         )
 
     def test_given_smf_database_relation_not_created_when_configure_sdcore_smf_is_called_then_status_is_blocked(  # noqa: E501
         self,
     ):
-        self._create_database_relation()
+        self._create_default_database_relation()
 
         self.harness.charm._configure_sdcore_smf(event=Mock())
 
         self.assertEqual(
             self.harness.model.unit.status,
-            BlockedStatus("Waiting for SMF database relation to be created"),
+            BlockedStatus("Waiting for `smf-database` relation to be created"),
         )
 
     def test_given_nrf_relation_not_created_when_configure_sdcore_smf_is_called_then_status_is_blocked(  # noqa: E501
         self,
     ):
-        self._create_database_relation()
+        self._create_default_database_relation()
         self._create_smf_database_relation()
 
         self.harness.charm._configure_sdcore_smf(event=Mock())
@@ -188,7 +188,7 @@ class TestCharm(unittest.TestCase):
     def test_given_container_cant_connect_when_configure_sdcore_smf_is_called_is_called_then_status_is_waiting(  # noqa: E501
         self,
     ):
-        self._create_database_relation()
+        self._create_default_database_relation()
         self._create_smf_database_relation()
         self._create_nrf_relation()
         self.harness.set_can_connect(container=self.container_name, val=False)
@@ -202,7 +202,7 @@ class TestCharm(unittest.TestCase):
     def test_given_database_relation_not_available_when_configure_sdcore_smf_is_called_then_status_is_waiting(  # noqa: E501
         self,
     ):
-        self._create_database_relation()
+        self._create_default_database_relation()
         self._create_smf_database_relation()
         self._create_nrf_relation()
         self.harness.set_can_connect(container=self.container_name, val=True)
@@ -211,7 +211,7 @@ class TestCharm(unittest.TestCase):
 
         self.assertEqual(
             self.harness.model.unit.status,
-            WaitingStatus("Waiting for database relation to be available"),
+            WaitingStatus("Waiting for `default-database` relation to be available"),
         )
 
     def test_given_smf_database_relation_not_available_when_configure_sdcore_smf_is_called_then_status_is_waiting(  # noqa: E501
@@ -226,7 +226,7 @@ class TestCharm(unittest.TestCase):
 
         self.assertEqual(
             self.harness.model.unit.status,
-            WaitingStatus("Waiting for SMF database relation to be available"),
+            WaitingStatus("Waiting for `smf-database` relation to be available"),
         )
 
     def test_given_nrf_is_not_available_when_configure_sdcore_smf_is_called_then_status_is_waiting(  # noqa: E501

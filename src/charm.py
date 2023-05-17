@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 BASE_CONFIG_PATH = "/etc/smf"
 CONFIG_FILE = "smfcfg.yaml"
 UEROUTING_CONFIG_FILE = "uerouting.yaml"
-DATABASE_NAME = "free5gc"
+DEFAULT_DATABASE_NAME = "free5gc"
 SMF_DATABASE_NAME = "sdcore_smf"
 SMF_SBI_PORT = 29502
 PFCP_PORT = 8805
@@ -47,8 +47,8 @@ class SMFOperatorCharm(CharmBase):
 
         self._nrf_requires = NRFRequires(charm=self, relation_name="fiveg_nrf")
 
-        self._database = DatabaseRequires(
-            self, relation_name="database", database_name=DATABASE_NAME
+        self._default_database = DatabaseRequires(
+            self, relation_name="default-database", database_name=DEFAULT_DATABASE_NAME
         )
         self._smf_database = DatabaseRequires(
             self, relation_name="smf-database", database_name=SMF_DATABASE_NAME
@@ -57,8 +57,12 @@ class SMFOperatorCharm(CharmBase):
         self.framework.observe(self.on.install, self._on_install)
         self.framework.observe(self.on.smf_pebble_ready, self._configure_sdcore_smf)
 
-        self.framework.observe(self.on.database_relation_joined, self._configure_sdcore_smf)
-        self.framework.observe(self._database.on.database_created, self._configure_sdcore_smf)
+        self.framework.observe(
+            self.on.default_database_relation_joined, self._configure_sdcore_smf
+        )
+        self.framework.observe(
+            self._default_database.on.database_created, self._configure_sdcore_smf
+        )
         self.framework.observe(self.on.smf_database_relation_joined, self._configure_sdcore_smf)
         self.framework.observe(self._smf_database.on.database_created, self._configure_sdcore_smf)
 
@@ -101,11 +105,13 @@ class SMFOperatorCharm(CharmBase):
         Args:
             event: Juju event
         """
-        if not self._database_relation_is_created:
-            self.unit.status = BlockedStatus("Waiting for database relation to be created")
+        if not self._default_database_relation_is_created:
+            self.unit.status = BlockedStatus(
+                "Waiting for `default-database` relation to be created"
+            )
             return
         if not self._smf_database_relation_is_created:
-            self.unit.status = BlockedStatus("Waiting for SMF database relation to be created")
+            self.unit.status = BlockedStatus("Waiting for `smf-database` relation to be created")
             return
         if not self._nrf_relation_is_created:
             self.unit.status = BlockedStatus("Waiting for NRF relation to be created")
@@ -113,11 +119,13 @@ class SMFOperatorCharm(CharmBase):
         if not self._container.can_connect():
             self.unit.status = WaitingStatus("Waiting for container to be ready")
             return
-        if not self._database_is_available:
-            self.unit.status = WaitingStatus("Waiting for database relation to be available")
+        if not self._default_database_is_available:
+            self.unit.status = WaitingStatus(
+                "Waiting for `default-database` relation to be available"
+            )
             return
         if not self._smf_database_is_available:
-            self.unit.status = WaitingStatus("Waiting for SMF database relation to be available")
+            self.unit.status = WaitingStatus("Waiting for `smf-database` relation to be available")
             return
         if not self._nrf_is_available:
             self.unit.status = WaitingStatus("Waiting for NRF relation to be available")
@@ -130,8 +138,9 @@ class SMFOperatorCharm(CharmBase):
             return
         if not self._config_file_is_written:
             self._write_config_file(
-                database_name=DATABASE_NAME,
-                database_url=self._smf_database_data["uris"].split(",")[0],
+                default_database_name=DEFAULT_DATABASE_NAME,
+                default_database_url=self._smf_database_data["uris"].split(",")[0],
+                smf_database_name=SMF_DATABASE_NAME,
                 smf_url=self._smf_hostname,
                 smf_sbi_port=SMF_SBI_PORT,
                 nrf_url=self._nrf_requires.get_nrf_url(),
@@ -147,8 +156,9 @@ class SMFOperatorCharm(CharmBase):
 
     def _write_config_file(
         self,
-        database_name: str,
-        database_url: str,
+        default_database_name: str,
+        default_database_url: str,
+        smf_database_name: str,
         smf_url: str,
         smf_sbi_port: int,
         nrf_url: str,
@@ -157,8 +167,9 @@ class SMFOperatorCharm(CharmBase):
         """Writes config file to workload.
 
         Args:
-            database_name (str): Database name.
-            database_url (str): Database URL.
+            default_database_name (str): Database name.
+            default_database_url (str): Database URL.
+            smf_database_name (str): SMF database name.
             smf_url (str): SMF URL.
             smf_sbi_port (int): SMF SBI port.
             nrf_url (str): NRF URL.
@@ -167,8 +178,9 @@ class SMFOperatorCharm(CharmBase):
         jinja2_env = Environment(loader=FileSystemLoader("src/templates"))
         template = jinja2_env.get_template("smfcfg.yaml.j2")
         content = template.render(
-            database_name=DATABASE_NAME,
-            database_url=database_url,
+            default_database_name=default_database_name,
+            default_database_url=default_database_url,
+            smf_database_name=smf_database_name,
             smf_url=smf_url,
             smf_sbi_port=smf_sbi_port,
             nrf_url=nrf_url,
@@ -215,13 +227,13 @@ class SMFOperatorCharm(CharmBase):
         return bool(self._container.exists(f"{BASE_CONFIG_PATH}/{UEROUTING_CONFIG_FILE}"))
 
     @property
-    def _database_relation_is_created(self) -> bool:
+    def _default_database_relation_is_created(self) -> bool:
         """Returns whether database relation is created.
 
         Returns:
             bool: Whether database relation is created.
         """
-        return self._relation_created("database")
+        return self._relation_created("default-database")
 
     @property
     def _smf_database_relation_is_created(self) -> bool:
@@ -251,13 +263,13 @@ class SMFOperatorCharm(CharmBase):
         return bool(self._nrf_requires.get_nrf_url())
 
     @property
-    def _database_is_available(self) -> bool:
+    def _default_database_is_available(self) -> bool:
         """Returns whether database relation is available.
 
         Returns:
             bool: Whether database relation is available.
         """
-        return bool(self._database.is_resource_created())
+        return bool(self._default_database.is_resource_created())
 
     @property
     def _smf_database_is_available(self) -> bool:
