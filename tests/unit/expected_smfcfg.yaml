@@ -19,19 +19,6 @@ configuration:
     brokerUri: "sd-core-kafka-headless"
     brokerPort: 9092
     topicName: "sdcore-data-source-smf"
-  staticIpInfo:
-    - dnn: internet_1
-      imsiIpInfo:
-        supi-123456789012341: "1.1.1.1"
-        supi-123456789012342: "2.2.2.2"
-        supi-123456789012343: "3.3.3.3"
-        supi-123456789012344: "4.4.4.4"
-    - dnn: internet_2
-      imsiIpInfo:
-        supi-123456789012345: "5.5.5.5"
-        supi-123456789012346: "6.6.6.6"
-        supi-123456789012347: "7.7.7.7"
-        supi-123456789012348: "8.8.8.8"
   smfName: SMF # the name of this SMF
   sbi: # Service-based interface information
     scheme: http # the protocol for sbi (http or https)
@@ -45,33 +32,6 @@ configuration:
     - nsmf-pdusession # Nsmf_PDUSession service
     - nsmf-event-exposure # Nsmf_EventExposure service
     - nsmf-oam # OAM service
-  snssaiInfos: # the S-NSSAI (Single Network Slice Selection Assistance Information) list supported by this AMF
-    - sNssai: # S-NSSAI (Single Network Slice Selection Assistance Information)
-        sst: 1 # Slice/Service Type (uinteger, range: 0~255)
-        sd: "010203" # Slice Differentiator (3 bytes hex string, range: 000000~FFFFFF)
-      dnnInfos: # DNN information list
-        - dnn: internet # Data Network Name
-          dns: # the IP address of DNS
-            ipv4: 8.8.8.8
-            ipv6: 2001:4860:4860::8888
-          ueSubnet: 60.60.0.0/16 # should be CIDR type
-          mtu: 1400
-      plmnId:
-        mcc: "111"
-        mnc: "222"
-    - sNssai: # S-NSSAI (Single Network Slice Selection Assistance Information)
-        sst: 1 # Slice/Service Type (uinteger, range: 0~255)
-        sd: "112233" # Slice Differentiator (3 bytes hex string, range: 000000~FFFFFF)
-      dnnInfos: # DNN information list
-        - dnn: internet # Data Network Name
-          dns: # the IP address of DNS
-            ipv4: 8.8.8.8
-            ipv6: 2001:4860:4860::8888
-          ueSubnet: 60.61.0.0/16 # should be CIDR type
-          mtu: 1400
-      plmnId:
-        mcc: "333"
-        mnc: "444"
   pfcp: # the IP address of N4 interface on this SMF (PFCP)
     addr: 1.1.1.1
   userplane_information: # list of userplane information
