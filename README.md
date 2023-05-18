@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./icon.svg" alt="ONF Icon">
+  <img src="./icon.svg" alt="ONF Icon" width="200" height="200">
 </div>
 <br/>
 <div align="center">
