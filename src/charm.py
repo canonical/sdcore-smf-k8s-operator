@@ -136,16 +136,19 @@ class SMFOperatorCharm(CharmBase):
                 f"Waiting for `{UEROUTING_CONFIG_FILE}` config file to be pushed to workload container"  # noqa: W505, E501
             )
             return
-        if not self._config_file_is_written:
-            self._write_config_file(
-                default_database_name=DEFAULT_DATABASE_NAME,
-                default_database_url=self._smf_database_data["uris"].split(",")[0],
-                smf_database_name=SMF_DATABASE_NAME,
-                smf_url=self._smf_hostname,
-                smf_sbi_port=SMF_SBI_PORT,
-                nrf_url=self._nrf_requires.nrf_url,
-                pod_ip=str(self._pod_ip),
-            )
+        content = self._render_config_file(
+            default_database_name=DEFAULT_DATABASE_NAME,
+            default_database_url=self._smf_database_data["uris"].split(",")[0],
+            smf_database_name=SMF_DATABASE_NAME,
+            smf_url=self._smf_hostname,
+            smf_sbi_port=SMF_SBI_PORT,
+            nrf_url=self._nrf_requires.nrf_url,
+            pod_ip=str(self._pod_ip),
+        )
+        if not self._config_file_is_written or not self._config_file_content_matches(
+            content=content
+        ):
+            self._write_config_file(content=content)
         self._configure_pebble()
 
     def _configure_pebble(self) -> None:
@@ -156,37 +159,13 @@ class SMFOperatorCharm(CharmBase):
 
     def _write_config_file(
         self,
-        *,
-        default_database_name: str,
-        default_database_url: str,
-        smf_database_name: str,
-        smf_url: str,
-        smf_sbi_port: int,
-        nrf_url: str,
-        pod_ip: str,
+        content: str,
     ) -> None:
         """Writes config file to workload.
 
         Args:
-            default_database_name (str): Database name.
-            default_database_url (str): Database URL.
-            smf_database_name (str): SMF database name.
-            smf_url (str): SMF URL.
-            smf_sbi_port (int): SMF SBI port.
-            nrf_url (str): NRF URL.
-            pod_ip (IPv4Address): Pod IP address.
+            content (str): Config file content.
         """
-        jinja2_env = Environment(loader=FileSystemLoader("src/templates"))
-        template = jinja2_env.get_template("smfcfg.yaml.j2")
-        content = template.render(
-            default_database_name=default_database_name,
-            default_database_url=default_database_url,
-            smf_database_name=smf_database_name,
-            smf_url=smf_url,
-            smf_sbi_port=smf_sbi_port,
-            nrf_url=nrf_url,
-            pod_ip=pod_ip,
-        )
         self._container.push(path=f"{BASE_CONFIG_PATH}/{CONFIG_FILE}", source=content)
         logger.info("Pushed: %s to workload.", CONFIG_FILE)
 
@@ -217,6 +196,54 @@ class SMFOperatorCharm(CharmBase):
             bool: Whether the config file was written.
         """
         return bool(self._container.exists(f"{BASE_CONFIG_PATH}/{CONFIG_FILE}"))
+
+    def _render_config_file(
+        self,
+        *,
+        default_database_name: str,
+        default_database_url: str,
+        smf_database_name: str,
+        smf_url: str,
+        smf_sbi_port: int,
+        nrf_url: str,
+        pod_ip: str,
+    ) -> str:
+        """Renders the config file content.
+
+        Args:
+            default_database_name (str): Database name.
+            default_database_url (str): Database URL.
+            smf_database_name (str): SMF database name.
+            smf_url (str): SMF URL.
+            smf_sbi_port (int): SMF SBI port.
+            nrf_url (str): NRF URL.
+            pod_ip (IPv4Address): Pod IP address.
+
+        Returns:
+            str: Config file content.
+        """
+        jinja2_env = Environment(loader=FileSystemLoader("src/templates"))
+        template = jinja2_env.get_template("smfcfg.yaml.j2")
+        return template.render(
+            default_database_name=default_database_name,
+            default_database_url=default_database_url,
+            smf_database_name=smf_database_name,
+            smf_url=smf_url,
+            smf_sbi_port=smf_sbi_port,
+            nrf_url=nrf_url,
+            pod_ip=pod_ip,
+        )
+
+    def _config_file_content_matches(self, content: str) -> bool:
+        """Returns whether the config file content matches the provided content.
+
+        Returns:
+            bool: Whether the config file content matches
+        """
+        logger.warning("### pull ####")
+        existing_content = self._container.pull(path=f"{BASE_CONFIG_PATH}/{CONFIG_FILE}")
+        logger.warning(f"Hola: {existing_content}")
+        return existing_content == content
 
     @property
     def _ue_config_file_is_written(self) -> bool:
