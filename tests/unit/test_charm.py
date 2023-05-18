@@ -3,7 +3,7 @@
 
 import logging
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, PropertyMock, patch
 
 import yaml
 from ops import testing
@@ -244,17 +244,17 @@ class TestCharm(unittest.TestCase):
             WaitingStatus("Waiting for NRF relation to be available"),
         )
 
-    @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.get_nrf_url")
+    @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.nrf_url")
     @patch("ops.model.Container.exists")
     def test_given_ue_config_file_is_not_written_when_configure_sdcore_smf_is_called_then_status_is_waiting(  # noqa: E501
-        self, patch_exists, patch_get_nrf_url
+        self, patch_exists, patch_nrf_url
     ):
         self._database_is_available()
         self._smf_database_is_available()
         self._create_nrf_relation()
         self.harness.set_can_connect(container=self.container_name, val=True)
         patch_exists.return_value = False
-        patch_get_nrf_url.return_value = "http://nrf.com:8080"
+        patch_nrf_url.return_value = "http://nrf.com:8080"
 
         self.harness.charm._configure_sdcore_smf(event=Mock())
 
@@ -265,12 +265,12 @@ class TestCharm(unittest.TestCase):
             ),
         )
 
-    @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.get_nrf_url")
+    @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.nrf_url")
     @patch("ops.model.Container.push")
     @patch("charm.check_output")
     @patch("ops.model.Container.exists")
     def test_given_config_files_and_relations_are_created_when_configure_sdcore_smf_is_called_then_status_is_active(  # noqa: E501
-        self, patch_exists, patch_check_output, patch_push, patch_get_nrf_url
+        self, patch_exists, patch_check_output, patch_push, patch_nrf_url
     ):
         self._database_is_available()
         self._smf_database_is_available()
@@ -278,7 +278,7 @@ class TestCharm(unittest.TestCase):
         self.harness.set_can_connect(container=self.container_name, val=True)
         patch_exists.side_effect = [True, True]
         patch_check_output.return_value = b"1.1.1.1"
-        patch_get_nrf_url.return_value = "http://nrf.com:8080"
+        patch_nrf_url.return_value = "http://nrf.com:8080"
 
         self.harness.charm._configure_sdcore_smf(event=Mock())
 
@@ -287,7 +287,7 @@ class TestCharm(unittest.TestCase):
             ActiveStatus(),
         )
 
-    @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.get_nrf_url")
+    @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.nrf_url", new_callable=PropertyMock)
     @patch("ops.model.Container.exists")
     @patch("charm.check_output")
     @patch("ops.model.Container.push")
@@ -296,7 +296,7 @@ class TestCharm(unittest.TestCase):
         patch_push,
         patch_check_output,
         patch_exists,
-        patch_get_nrf_url,
+        patch_nrf_url,
     ):
         pod_ip = "1.1.1.1"
         patch_check_output.return_value = pod_ip.encode()
@@ -305,7 +305,7 @@ class TestCharm(unittest.TestCase):
         self._create_nrf_relation()
         self.harness.set_can_connect(container="smf", val=True)
         patch_exists.side_effect = [True, False]
-        patch_get_nrf_url.return_value = "http://nrf.com:8080"
+        patch_nrf_url.return_value = "http://nrf.com:8080"
 
         self.harness.charm._configure_sdcore_smf(event=Mock())
 
@@ -314,12 +314,12 @@ class TestCharm(unittest.TestCase):
             source=self._read_file("tests/unit/expected_smfcfg.yaml"),
         )
 
-    @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.get_nrf_url")
+    @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.nrf_url")
     @patch("ops.model.Container.push")
     @patch("charm.check_output")
     @patch("ops.model.Container.exists")
     def test_given_config_files_and_relations_are_created_when_configure_sdcore_smf_is_called_then_expected_plan_is_applied(  # noqa: E501
-        self, patch_exists, patch_check_output, patch_push, patch_get_nrf_url
+        self, patch_exists, patch_check_output, patch_push, patch_nrf_url
     ):
         pod_ip = "1.1.1.1"
         patch_check_output.return_value = pod_ip.encode()
@@ -327,7 +327,7 @@ class TestCharm(unittest.TestCase):
         self._smf_database_is_available()
         self._create_nrf_relation()
         self.harness.set_can_connect(container=self.container_name, val=True)
-        patch_get_nrf_url.return_value = "http://nrf:8000"
+        patch_nrf_url.return_value = "http://nrf:8000"
         patch_exists.side_effect = [True, True]
 
         self.harness.charm._configure_sdcore_smf(event=Mock())

@@ -143,7 +143,7 @@ class SMFOperatorCharm(CharmBase):
                 smf_database_name=SMF_DATABASE_NAME,
                 smf_url=self._smf_hostname,
                 smf_sbi_port=SMF_SBI_PORT,
-                nrf_url=self._nrf_requires.get_nrf_url(),
+                nrf_url=self._nrf_requires.nrf_url,
                 pod_ip=str(self._pod_ip),
             )
         self._configure_pebble()
@@ -261,7 +261,7 @@ class SMFOperatorCharm(CharmBase):
         Returns:
             bool: whether the NRF endpoint is available.
         """
-        return bool(self._nrf_requires.get_nrf_url())
+        return bool(self._nrf_requires.nrf_url)
 
     @property
     def _default_database_is_available(self) -> bool:
