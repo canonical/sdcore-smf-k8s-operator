@@ -3,6 +3,7 @@
 
 import logging
 import unittest
+from io import StringIO
 from unittest.mock import Mock, PropertyMock, patch
 
 import yaml
@@ -332,7 +333,7 @@ class TestCharm(unittest.TestCase):
     ):
         pod_ip = "1.1.1.1"
         patch_check_output.return_value = pod_ip.encode()
-        patch_pull.return_value = self._read_file("tests/unit/expected_smfcfg.yaml")
+        patch_pull.return_value = StringIO(self._read_file("tests/unit/expected_smfcfg.yaml"))
         self._database_is_available()
         self._smf_database_is_available()
         self._create_nrf_relation()
@@ -359,7 +360,7 @@ class TestCharm(unittest.TestCase):
     ):
         pod_ip = "1.1.1.1"
         patch_check_output.return_value = pod_ip.encode()
-        patch_pull.return_value = "super different config file content"
+        patch_pull.return_value = StringIO("super different config file content")
         self._database_is_available()
         self._smf_database_is_available()
         self._create_nrf_relation()

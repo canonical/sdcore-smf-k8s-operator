@@ -27,7 +27,6 @@ storage:
 provides:
   metrics-endpoint:
     interface: prometheus_scrape
-    description: Links to grafana's own `/metrics` endpoint.
 
 requires:
   default-database:

@@ -241,7 +241,7 @@ class SMFOperatorCharm(CharmBase):
             bool: Whether the config file content matches
         """
         existing_content = self._container.pull(path=f"{BASE_CONFIG_PATH}/{CONFIG_FILE}")
-        return existing_content == content
+        return existing_content.read() == content
 
     @property
     def _ue_config_file_is_written(self) -> bool:
