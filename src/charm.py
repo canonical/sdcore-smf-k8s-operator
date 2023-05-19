@@ -240,9 +240,7 @@ class SMFOperatorCharm(CharmBase):
         Returns:
             bool: Whether the config file content matches
         """
-        logger.warning("### pull ####")
         existing_content = self._container.pull(path=f"{BASE_CONFIG_PATH}/{CONFIG_FILE}")
-        logger.warning(f"Hola: {existing_content}")
         return existing_content == content
 
     @property
