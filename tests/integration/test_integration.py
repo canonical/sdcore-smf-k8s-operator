@@ -53,6 +53,7 @@ async def test_given_charm_is_built_when_deployed_then_status_is_blocked(
         timeout=1000,
     )
 
+
 @pytest.mark.xfail(reason="MongoDB error on install hook.")
 @pytest.mark.abort_on_fail
 async def test_relate_and_wait_for_waiting_status(
