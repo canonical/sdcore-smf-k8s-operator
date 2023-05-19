@@ -16,10 +16,6 @@ configuration:
   mongodb:
     name: free5gc
     url: http://6.5.6.5
-  kafkaInfo:
-    brokerUri: "sd-core-kafka-headless"
-    brokerPort: 9092
-    topicName: "sdcore-data-source-smf"
   smfName: SMF # the name of this SMF
   sbi: # Service-based interface information
     scheme: http # the protocol for sbi (http or https)

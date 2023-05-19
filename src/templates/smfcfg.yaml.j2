@@ -16,10 +16,6 @@ configuration:
   mongodb:
     name: {{ default_database_name }}
     url: {{ default_database_url }}
-  kafkaInfo:
-    brokerUri: "sd-core-kafka-headless"
-    brokerPort: 9092
-    topicName: "sdcore-data-source-smf"
   smfName: SMF # the name of this SMF
   sbi: # Service-based interface information
     scheme: http # the protocol for sbi (http or https)
