@@ -3,7 +3,7 @@
 </div>
 <br/>
 <div align="center">
-  <a href="https://charmhub.io/sdcore-nrf"><img src="https://charmhub.io/sdcore-nrf/badge.svg" alt="CharmHub Badge"></a>
+  <a href="https://charmhub.io/sdcore-smf"><img src="https://charmhub.io/sdcore-smf/badge.svg" alt="CharmHub Badge"></a>
   <a href="https://github.com/canonical/sdcore-smf-operator/actions/workflows/publish-charm.yaml">
     <img src="https://github.com/canonical/sdcore-smf-operator/actions/workflows/publish-charm.yaml/badge.svg?branch=main" alt=".github/workflows/publish-charm.yaml">
   </a>
