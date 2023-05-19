@@ -3,3 +3,4 @@ jinja2
 lightkube
 lightkube-models
 pydantic
+pytest-interface-tester
