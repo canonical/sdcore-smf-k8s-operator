@@ -138,11 +138,13 @@ class TestCharm(unittest.TestCase):
             self.harness.model.unit.status, WaitingStatus("Waiting for container to be ready")
         )
 
+    @patch("ops.model.Container.exists")
     @patch("ops.model.Container.push")
-    def test_given_container_can_connect_when_on_install_then_ue_config_file_is_written_to_workload_container(  # noqa: E501
-        self, patch_push
+    def test_given_container_can_connect_and_storage_is_attached_when_on_install_then_ue_config_file_is_written_to_workload_container(  # noqa: E501
+        self, patch_push, patch_exists
     ):
         self.harness.set_can_connect(container=self.container_name, val=True)
+        patch_exists.return_value = True
 
         self.harness.charm._on_install(event=Mock())
 
@@ -150,6 +152,22 @@ class TestCharm(unittest.TestCase):
         patch_push.assert_called_with(
             path="/etc/smf/uerouting.yaml",
             source=expected_config_file_content,
+            make_dirs=True,
+        )
+
+    @patch("ops.model.Container.exists")
+    @patch("ops.model.Container.push")
+    def test_given_container_can_connect_and_storage_is_not_attached_when_on_install_then_status_is_waiting(  # noqa: E501
+        self, patch_push, patch_exists
+    ):
+        self.harness.set_can_connect(container=self.container_name, val=True)
+        patch_exists.return_value = False
+
+        self.harness.charm._on_install(event=Mock())
+
+        self.assertEqual(
+            self.harness.model.unit.status,
+            WaitingStatus("Waiting for storage to be attached"),
         )
 
     def test_given_database_relation_not_created_when_configure_sdcore_smf_is_called_then_status_is_blocked(  # noqa: E501
@@ -183,7 +201,8 @@ class TestCharm(unittest.TestCase):
         self.harness.charm._configure_sdcore_smf(event=Mock())
 
         self.assertEqual(
-            self.harness.model.unit.status, BlockedStatus("Waiting for NRF relation to be created")
+            self.harness.model.unit.status,
+            BlockedStatus("Waiting for `fiveg_nrf` relation to be created"),
         )
 
     def test_given_container_cant_connect_when_configure_sdcore_smf_is_called_is_called_then_status_is_waiting(  # noqa: E501
@@ -248,13 +267,15 @@ class TestCharm(unittest.TestCase):
     @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.nrf_url")
     @patch("ops.model.Container.exists")
     def test_given_ue_config_file_is_not_written_when_configure_sdcore_smf_is_called_then_status_is_waiting(  # noqa: E501
-        self, patch_exists, patch_nrf_url
+        self,
+        patch_exists,
+        patch_nrf_url,
     ):
         self._database_is_available()
         self._smf_database_is_available()
         self._create_nrf_relation()
         self.harness.set_can_connect(container=self.container_name, val=True)
-        patch_exists.return_value = False
+        patch_exists.side_effect = [True, False]
         patch_nrf_url.return_value = "http://nrf.com:8080"
 
         self.harness.charm._configure_sdcore_smf(event=Mock())
@@ -265,6 +286,18 @@ class TestCharm(unittest.TestCase):
                 "Waiting for `uerouting.yaml` config file to be pushed to workload container"
             ),
         )
+
+    @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.nrf_url")
+    @patch("ops.model.Container.exists")
+    def test_given_storage_is_not_attached_when_configure_sdcore_smf_is_called_then_status_is_waiting(  # noqa: E501
+        self, patch_exists, patch_nrf_url
+    ):
+        self._database_is_available()
+        self._smf_database_is_available()
+        self._create_nrf_relation()
+        self.harness.set_can_connect(container=self.container_name, val=True)
+        patch_exists.return_value = [False]
+        patch_nrf_url.return_value = "http://nrf.com:8080"
 
     @patch("ops.model.Container.pull")
     @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.nrf_url")
@@ -308,7 +341,7 @@ class TestCharm(unittest.TestCase):
         self._smf_database_is_available()
         self._create_nrf_relation()
         self.harness.set_can_connect(container="smf", val=True)
-        patch_exists.side_effect = [True, False, True]
+        patch_exists.side_effect = [True, True, False, True]
         patch_nrf_url.return_value = "http://nrf.com:8080"
 
         self.harness.charm._configure_sdcore_smf(event=Mock())
@@ -316,6 +349,7 @@ class TestCharm(unittest.TestCase):
         patch_push.assert_called_with(
             path="/etc/smf/smfcfg.yaml",
             source=self._read_file("tests/unit/expected_smfcfg.yaml"),
+            make_dirs=True,
         )
 
     @patch("ops.model.Container.pull")
@@ -373,6 +407,7 @@ class TestCharm(unittest.TestCase):
         patch_push.assert_called_with(
             path="/etc/smf/smfcfg.yaml",
             source=self._read_file("tests/unit/expected_smfcfg.yaml"),
+            make_dirs=True,
         )
 
     @patch("ops.model.Container.pull")

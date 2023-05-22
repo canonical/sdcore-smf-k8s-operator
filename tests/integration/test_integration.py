@@ -38,6 +38,7 @@ async def build_and_deploy(ops_test):
         charm,
         resources=resources,
         application_name=APP_NAME,
+        trust=True,
     )
     await _deploy_database(ops_test)
 
@@ -54,7 +55,6 @@ async def test_given_charm_is_built_when_deployed_then_status_is_blocked(
     )
 
 
-@pytest.mark.xfail(reason="MongoDB error on install hook.")
 @pytest.mark.abort_on_fail
 async def test_relate_and_wait_for_waiting_status(
     ops_test,

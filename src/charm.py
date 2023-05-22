@@ -97,6 +97,10 @@ class SMFOperatorCharm(CharmBase):
             self.unit.status = WaitingStatus("Waiting for container to be ready")
             event.defer()
             return
+        if not self._storage_is_attached:
+            self.unit.status = WaitingStatus("Waiting for storage to be attached")
+            event.defer()
+            return
         self._write_ue_config_file()
 
     def _configure_sdcore_smf(self, event: EventBase) -> None:
@@ -105,17 +109,12 @@ class SMFOperatorCharm(CharmBase):
         Args:
             event: Juju event
         """
-        if not self._default_database_relation_is_created:
-            self.unit.status = BlockedStatus(
-                "Waiting for `default-database` relation to be created"
-            )
-            return
-        if not self._smf_database_relation_is_created:
-            self.unit.status = BlockedStatus("Waiting for `smf-database` relation to be created")
-            return
-        if not self._nrf_relation_is_created:
-            self.unit.status = BlockedStatus("Waiting for NRF relation to be created")
-            return
+        for relation in ["default-database", "smf-database", "fiveg_nrf"]:
+            if not self._relation_created(relation):
+                self.unit.status = BlockedStatus(
+                    f"Waiting for `{relation}` relation to be created"
+                )
+                return
         if not self._container.can_connect():
             self.unit.status = WaitingStatus("Waiting for container to be ready")
             return
@@ -129,6 +128,10 @@ class SMFOperatorCharm(CharmBase):
             return
         if not self._nrf_is_available:
             self.unit.status = WaitingStatus("Waiting for NRF relation to be available")
+            return
+        if not self._storage_is_attached:
+            self.unit.status = WaitingStatus("Waiting for storage to be attached")
+            event.defer()
             return
         if not self._ue_config_file_is_written:
             event.defer()
@@ -166,7 +169,9 @@ class SMFOperatorCharm(CharmBase):
         Args:
             content (str): Config file content.
         """
-        self._container.push(path=f"{BASE_CONFIG_PATH}/{CONFIG_FILE}", source=content)
+        self._container.push(
+            path=f"{BASE_CONFIG_PATH}/{CONFIG_FILE}", source=content, make_dirs=True
+        )
         logger.info("Pushed: %s to workload.", CONFIG_FILE)
 
     def _write_ue_config_file(self) -> None:
@@ -174,7 +179,9 @@ class SMFOperatorCharm(CharmBase):
         with open(f"src/{UEROUTING_CONFIG_FILE}", "r") as f:
             content = f.read()
 
-        self._container.push(path=f"{BASE_CONFIG_PATH}/{UEROUTING_CONFIG_FILE}", source=content)
+        self._container.push(
+            path=f"{BASE_CONFIG_PATH}/{UEROUTING_CONFIG_FILE}", source=content, make_dirs=True
+        )
         logger.info("Pushed %s config file to workload", UEROUTING_CONFIG_FILE)
 
     def _relation_created(self, relation_name: str) -> bool:
@@ -187,6 +194,15 @@ class SMFOperatorCharm(CharmBase):
             bool: Whether the relation was created.
         """
         return bool(self.model.get_relation(relation_name))
+
+    @property
+    def _storage_is_attached(self) -> bool:
+        """Returns whether storage is attached to the workload container.
+
+        Returns:
+            bool: Whether storage is attached.
+        """
+        return self._container.exists(path=BASE_CONFIG_PATH)
 
     @property
     def _config_file_is_written(self) -> bool:
