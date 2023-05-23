@@ -21,7 +21,7 @@ async def _deploy_database(ops_test):
     await ops_test.model.deploy(
         DATABASE_APP_NAME,
         application_name=DATABASE_APP_NAME,
-        channel="latest/edge",
+        channel="5/edge",
         trust=True,
     )
 
@@ -68,6 +68,6 @@ async def test_relate_and_wait_for_waiting_status(
     )
     await ops_test.model.wait_for_idle(
         apps=[APP_NAME],
-        status="waiting",
+        status="blocked",
         timeout=100,
     )
