@@ -19,7 +19,7 @@ configuration:
   smfName: SMF # the name of this SMF
   sbi: # Service-based interface information
     scheme: http # the protocol for sbi (http or https)
-    registerIPv4: sdcore-smf-operator.whatever.svc.cluster.local # IP used to register to NRF
+    registerIPv4: sdcore-smf.whatever.svc.cluster.local # IP used to register to NRF
     bindingIPv4: smf # IP used to bind the service
     port: 29502 # Port used to bind the service
     tls: # the local path of TLS key

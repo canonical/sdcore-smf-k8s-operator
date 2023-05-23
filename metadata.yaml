@@ -1,4 +1,4 @@
-name: sdcore-smf-operator
+name: sdcore-smf
 display-name: SDCORE 5G SMF
 summary: Charmed Operator for the SDCORE Session Management Function (SMF).
 description: Charmed Operator for the SDCORE Session Management Function (SMF).

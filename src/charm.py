@@ -97,7 +97,7 @@ class SMFOperatorCharm(CharmBase):
             self.unit.status = WaitingStatus("Waiting for container to be ready")
             event.defer()
             return
-        if not self._storage_is_attached:
+        if not self._storage_is_attached():
             self.unit.status = WaitingStatus("Waiting for storage to be attached")
             event.defer()
             return
@@ -118,32 +118,28 @@ class SMFOperatorCharm(CharmBase):
         if not self._container.can_connect():
             self.unit.status = WaitingStatus("Waiting for container to be ready")
             return
-        if not self._default_database_is_available:
+        if not self._default_database_is_available():
             self.unit.status = WaitingStatus(
                 "Waiting for `default-database` relation to be available"
             )
             return
-        if not self._smf_database_is_available:
+        if not self._smf_database_is_available():
             self.unit.status = WaitingStatus("Waiting for `smf-database` relation to be available")
             return
-        if not self._nrf_is_available:
+        if not self._nrf_is_available():
             self.unit.status = WaitingStatus("Waiting for NRF relation to be available")
             return
-        if not self._storage_is_attached:
+        if not self._storage_is_attached():
             self.unit.status = WaitingStatus("Waiting for storage to be attached")
             event.defer()
             return
-        if not self._ue_config_file_is_written:
+        if not self._ue_config_file_is_written():
             event.defer()
             self.unit.status = WaitingStatus(
                 f"Waiting for `{UEROUTING_CONFIG_FILE}` config file to be pushed to workload container"  # noqa: W505, E501
             )
             return
         self._render_and_write_config_file()
-        self._configure_pebble()
-
-    def _configure_pebble(self) -> None:
-        """Adds layer to pebble config if the proposed config is different from the current one."""
         self._container.add_layer("smf", self._pebble_layer, combine=True)
         self._container.replan()
         self.unit.status = ActiveStatus()
@@ -152,12 +148,12 @@ class SMFOperatorCharm(CharmBase):
         """Renders and writes config file to workload."""
         content = self._render_config_file(
             default_database_name=DEFAULT_DATABASE_NAME,
-            default_database_url=self._smf_database_data["uris"].split(",")[0],
+            default_database_url=self._smf_database_data()["uris"].split(",")[0],
             smf_database_name=SMF_DATABASE_NAME,
             smf_url=self._smf_hostname,
             smf_sbi_port=SMF_SBI_PORT,
             nrf_url=self._nrf_requires.nrf_url,
-            pod_ip=str(self._pod_ip),
+            pod_ip=str(self._pod_ip()),
         )
         self._write_config_file(content=content)
 
@@ -193,7 +189,6 @@ class SMFOperatorCharm(CharmBase):
         """
         return bool(self.model.get_relation(relation_name))
 
-    @property
     def _storage_is_attached(self) -> bool:
         """Returns whether storage is attached to the workload container.
 
@@ -201,15 +196,6 @@ class SMFOperatorCharm(CharmBase):
             bool: Whether storage is attached.
         """
         return self._container.exists(path=BASE_CONFIG_PATH)
-
-    @property
-    def _config_file_is_written(self) -> bool:
-        """Returns whether the config file was written to the workload container.
-
-        Returns:
-            bool: Whether the config file was written.
-        """
-        return bool(self._container.exists(f"{BASE_CONFIG_PATH}/{CONFIG_FILE}"))
 
     @staticmethod
     def _render_config_file(
@@ -257,7 +243,6 @@ class SMFOperatorCharm(CharmBase):
         existing_content = self._container.pull(path=f"{BASE_CONFIG_PATH}/{CONFIG_FILE}")
         return existing_content.read() == content
 
-    @property
     def _ue_config_file_is_written(self) -> bool:
         """Returns whether the config file was written to the workload container.
 
@@ -266,34 +251,6 @@ class SMFOperatorCharm(CharmBase):
         """
         return bool(self._container.exists(f"{BASE_CONFIG_PATH}/{UEROUTING_CONFIG_FILE}"))
 
-    @property
-    def _default_database_relation_is_created(self) -> bool:
-        """Returns whether database relation is created.
-
-        Returns:
-            bool: Whether database relation is created.
-        """
-        return self._relation_created("default-database")
-
-    @property
-    def _smf_database_relation_is_created(self) -> bool:
-        """Returns whether database relation is created.
-
-        Returns:
-            bool: Whether database relation is created.
-        """
-        return self._relation_created("smf-database")
-
-    @property
-    def _nrf_relation_is_created(self) -> bool:
-        """Returns whether database relation is created.
-
-        Returns:
-            bool: Whether database relation is created.
-        """
-        return self._relation_created("fiveg_nrf")
-
-    @property
     def _nrf_is_available(self) -> bool:
         """Returns whether the NRF endpoint is available.
 
@@ -302,7 +259,6 @@ class SMFOperatorCharm(CharmBase):
         """
         return bool(self._nrf_requires.nrf_url)
 
-    @property
     def _default_database_is_available(self) -> bool:
         """Returns whether database relation is available.
 
@@ -311,7 +267,6 @@ class SMFOperatorCharm(CharmBase):
         """
         return bool(self._default_database.is_resource_created())
 
-    @property
     def _smf_database_is_available(self) -> bool:
         """Returns whether database relation is available.
 
@@ -320,7 +275,6 @@ class SMFOperatorCharm(CharmBase):
         """
         return bool(self._smf_database.is_resource_created())
 
-    @property
     def _smf_database_data(self) -> dict:
         """Returns the database data.
 
@@ -330,7 +284,7 @@ class SMFOperatorCharm(CharmBase):
         Raises:
             RuntimeError: If the database is not available.
         """
-        if not self._smf_database_is_available:
+        if not self._smf_database_is_available():
             raise RuntimeError("SMF database is not available")
         return self._smf_database.fetch_relation_data()[self._smf_database.relations[0].id]
 
@@ -369,7 +323,7 @@ class SMFOperatorCharm(CharmBase):
             "GRPC_VERBOSITY": "debug",
             "PFCP_PORT_UPF": "8805",
             "MANAGED_BY_CONFIG_POD": "true",
-            "POD_IP": str(self._pod_ip),
+            "POD_IP": str(self._pod_ip()),
         }
 
     @property
@@ -381,7 +335,6 @@ class SMFOperatorCharm(CharmBase):
         """
         return f"{self.model.app.name}.{self.model.name}.svc.cluster.local"
 
-    @property
     def _pod_ip(self) -> Optional[IPv4Address]:
         """Get the IP address of the Kubernetes pod.
 
