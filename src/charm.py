@@ -139,6 +139,17 @@ class SMFOperatorCharm(CharmBase):
                 f"Waiting for `{UEROUTING_CONFIG_FILE}` config file to be pushed to workload container"  # noqa: W505, E501
             )
             return
+        self._render_and_write_config_file()
+        self._configure_pebble()
+
+    def _configure_pebble(self) -> None:
+        """Adds layer to pebble config if the proposed config is different from the current one."""
+        self._container.add_layer("smf", self._pebble_layer, combine=True)
+        self._container.replan()
+        self.unit.status = ActiveStatus()
+
+    def _render_and_write_config_file(self) -> None:
+        """Renders and writes config file to workload."""
         content = self._render_config_file(
             default_database_name=DEFAULT_DATABASE_NAME,
             default_database_url=self._smf_database_data["uris"].split(",")[0],
@@ -149,13 +160,6 @@ class SMFOperatorCharm(CharmBase):
             pod_ip=str(self._pod_ip),
         )
         self._write_config_file(content=content)
-        self._configure_pebble()
-
-    def _configure_pebble(self) -> None:
-        """Adds layer to pebble config if the proposed config is different from the current one."""
-        self._container.add_layer("smf", self._pebble_layer, combine=True)
-        self._container.replan()
-        self.unit.status = ActiveStatus()
 
     def _write_config_file(self, content: str) -> None:
         """Writes config file to workload.
