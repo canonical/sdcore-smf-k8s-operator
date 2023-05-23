@@ -17,9 +17,14 @@ Charmed Operator for the SD-CORE Session Management Function (SMF).
 # Usage
 
 ```bash
-juju deploy sdcore-smf --trust --channel=edge
+juju deploy mongodb-k8s --channel 5/edge --trust
+juju deploy sdcore-smf --channel edge --trust
+juju deploy sdcore-nrf --channel edge --trust
+juju relate sdcore-smf:default-database mongodb-k8s
+juju relate sdcore-smf:smf-database mongodb-k8s
+juju relate sdcore-smf:fiveg_nrf sdcore-nrf
 ```
 
 # Image
 
-- **smf**: `omecproject/5gc-smf:master-13e5671`
+**smf**: `omecproject/5gc-smf:master-13e5671`

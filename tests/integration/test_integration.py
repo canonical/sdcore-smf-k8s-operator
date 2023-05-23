@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 METADATA = yaml.safe_load(Path("./metadata.yaml").read_text())
 APP_NAME = METADATA["name"]
+NRF_APP_NAME = "sdcore-nrf"
 DATABASE_APP_NAME = "mongodb-k8s"
 
 
@@ -22,6 +23,16 @@ async def _deploy_database(ops_test):
         DATABASE_APP_NAME,
         application_name=DATABASE_APP_NAME,
         channel="5/edge",
+        trust=True,
+    )
+
+
+async def _deploy_nrf(ops_test):
+    """Deploy a NRF."""
+    await ops_test.model.deploy(
+        NRF_APP_NAME,
+        application_name=NRF_APP_NAME,
+        channel="edge",
         trust=True,
     )
 
@@ -41,6 +52,7 @@ async def build_and_deploy(ops_test):
         trust=True,
     )
     await _deploy_database(ops_test)
+    await _deploy_nrf(ops_test)
 
 
 @pytest.mark.abort_on_fail
@@ -66,8 +78,12 @@ async def test_relate_and_wait_for_waiting_status(
     await ops_test.model.add_relation(
         relation1=f"{APP_NAME}:smf-database", relation2=f"{DATABASE_APP_NAME}"
     )
+    # TODO: Uncomment when provider side of `fiveg_nrf` interface is ready
+    # await ops_test.model.add_relation(
+    #     relation1=f"{APP_NAME}:fiveg_nrf", relation2=f"{NRF_APP_NAME}"
+    # )
     await ops_test.model.wait_for_idle(
         apps=[APP_NAME],
-        status="blocked",
+        status="blocked",  # TODO: Change status from to ´´`active` when provider side of `fiveg_nrf` interface is ready  # noqa: E501, W503
         timeout=100,
     )

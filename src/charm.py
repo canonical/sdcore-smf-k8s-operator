@@ -148,10 +148,7 @@ class SMFOperatorCharm(CharmBase):
             nrf_url=self._nrf_requires.nrf_url,
             pod_ip=str(self._pod_ip),
         )
-        if not self._config_file_is_written or not self._config_file_content_matches(
-            content=content
-        ):
-            self._write_config_file(content=content)
+        self._write_config_file(content=content)
         self._configure_pebble()
 
     def _configure_pebble(self) -> None:
