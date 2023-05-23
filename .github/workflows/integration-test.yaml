@@ -22,9 +22,6 @@ jobs:
           juju-channel: 3.1/stable
           channel: 1.26-strict/stable
 
-      - name: Setup upterm session
-        uses: lhotari/action-upterm@v1
-
       - name: Run integration tests
         run: tox -e integration
 
