@@ -160,10 +160,7 @@ class SMFOperatorCharm(CharmBase):
         self._container.replan()
         self.unit.status = ActiveStatus()
 
-    def _write_config_file(
-        self,
-        content: str,
-    ) -> None:
+    def _write_config_file(self, content: str) -> None:
         """Writes config file to workload.
 
         Args:
@@ -213,8 +210,8 @@ class SMFOperatorCharm(CharmBase):
         """
         return bool(self._container.exists(f"{BASE_CONFIG_PATH}/{CONFIG_FILE}"))
 
+    @staticmethod
     def _render_config_file(
-        self,
         *,
         default_database_name: str,
         default_database_url: str,
@@ -328,6 +325,9 @@ class SMFOperatorCharm(CharmBase):
 
         Returns:
             dict: The database data.
+
+        Raises:
+            RuntimeError: If the database is not available.
         """
         if not self._smf_database_is_available:
             raise RuntimeError("SMF database is not available")
