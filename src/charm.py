@@ -139,13 +139,17 @@ class SMFOperatorCharm(CharmBase):
                 f"Waiting for `{UEROUTING_CONFIG_FILE}` config file to be pushed to workload container"  # noqa: W505, E501
             )
             return
-        self._render_and_write_config_file()
+        self._update_config_file()
         self._container.add_layer("smf", self._pebble_layer, combine=True)
         self._container.replan()
         self.unit.status = ActiveStatus()
 
-    def _render_and_write_config_file(self) -> None:
-        """Renders and writes config file to workload."""
+    def _update_config_file(self) -> None:
+        """Updates config file.
+
+        Writes the config file if it does not exist or
+        if the content does not match.
+        """
         content = self._render_config_file(
             default_database_name=DEFAULT_DATABASE_NAME,
             default_database_url=self._smf_database_data()["uris"].split(",")[0],
@@ -155,7 +159,10 @@ class SMFOperatorCharm(CharmBase):
             nrf_url=self._nrf_requires.nrf_url,
             pod_ip=str(self._pod_ip()),
         )
-        self._write_config_file(content=content)
+        if not self._config_file_is_written() or not self._config_file_content_matches(
+            content=content
+        ):
+            self._write_config_file(content=content)
 
     def _write_config_file(self, content: str) -> None:
         """Writes config file to workload.
@@ -196,6 +203,14 @@ class SMFOperatorCharm(CharmBase):
             bool: Whether storage is attached.
         """
         return self._container.exists(path=BASE_CONFIG_PATH)
+
+    def _config_file_is_written(self) -> bool:
+        """Returns whether the config file was written to the workload container.
+
+        Returns:
+            bool: Whether the config file was written.
+        """
+        return bool(self._container.exists(f"{BASE_CONFIG_PATH}/{CONFIG_FILE}"))
 
     @staticmethod
     def _render_config_file(
