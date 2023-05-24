@@ -15,7 +15,7 @@ configuration:
   debugProfilePort: 5001
   mongodb:
     name: free5gc
-    url: http://6.5.6.5
+    url: http://1.1.1.1
   smfName: SMF # the name of this SMF
   sbi: # Service-based interface information
     scheme: http # the protocol for sbi (http or https)

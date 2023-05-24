@@ -96,7 +96,7 @@ class TestCharm(unittest.TestCase):
         return relation_id
 
     def _database_is_available(self) -> str:
-        database_url = "http://6.6.6.6"
+        database_url = "http://1.1.1.1"
         database_username = "banana"
         database_password = "pizza"
         database_relation_id = self._create_default_database_relation()

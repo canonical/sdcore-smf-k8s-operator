@@ -152,7 +152,7 @@ class SMFOperatorCharm(CharmBase):
         """
         content = self._render_config_file(
             default_database_name=DEFAULT_DATABASE_NAME,
-            default_database_url=self._smf_database_data()["uris"].split(",")[0],
+            default_database_url=self._get_default_database_data()["uris"].split(",")[0],
             smf_database_name=SMF_DATABASE_NAME,
             smf_url=self._smf_hostname,
             smf_sbi_port=SMF_SBI_PORT,
@@ -290,7 +290,20 @@ class SMFOperatorCharm(CharmBase):
         """
         return bool(self._smf_database.is_resource_created())
 
-    def _smf_database_data(self) -> dict:
+    def _get_default_database_data(self) -> dict:
+        """Returns the database data.
+
+        Returns:
+            dict: The database data.
+
+        Raises:
+            RuntimeError: If the database is not available.
+        """
+        if not self._default_database_is_available():
+            raise RuntimeError("Default database is not available")
+        return self._default_database.fetch_relation_data()[self._default_database.relations[0].id]
+
+    def _get_smf_database_data(self) -> dict:
         """Returns the database data.
 
         Returns:
