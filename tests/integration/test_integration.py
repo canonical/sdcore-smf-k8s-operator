@@ -63,7 +63,7 @@ async def test_given_charm_is_built_when_deployed_then_status_is_blocked(
     await ops_test.model.wait_for_idle(
         apps=[APP_NAME],
         status="blocked",
-        timeout=1000,
+        timeout=200,
     )
 
 
@@ -72,6 +72,9 @@ async def test_relate_and_wait_for_active_status(
     ops_test,
     build_and_deploy,
 ):
+    await ops_test.model.add_relation(
+        relation1=f"{NRF_APP_NAME}:database", relation2=f"{DATABASE_APP_NAME}"
+    )
     await ops_test.model.add_relation(
         relation1=f"{APP_NAME}:default-database", relation2=f"{DATABASE_APP_NAME}"
     )
@@ -84,5 +87,5 @@ async def test_relate_and_wait_for_active_status(
     await ops_test.model.wait_for_idle(
         apps=[APP_NAME],
         status="active",
-        timeout=100,
+        timeout=200,
     )
