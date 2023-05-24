@@ -68,7 +68,7 @@ async def test_given_charm_is_built_when_deployed_then_status_is_blocked(
 
 
 @pytest.mark.abort_on_fail
-async def test_relate_and_wait_for_waiting_status(
+async def test_relate_and_wait_for_active_status(
     ops_test,
     build_and_deploy,
 ):
@@ -78,12 +78,11 @@ async def test_relate_and_wait_for_waiting_status(
     await ops_test.model.add_relation(
         relation1=f"{APP_NAME}:smf-database", relation2=f"{DATABASE_APP_NAME}"
     )
-    # TODO: Uncomment when provider side of `fiveg_nrf` interface is ready
-    # await ops_test.model.add_relation(
-    #     relation1=f"{APP_NAME}:fiveg_nrf", relation2=f"{NRF_APP_NAME}"
-    # )
+    await ops_test.model.add_relation(
+        relation1=f"{APP_NAME}:fiveg_nrf", relation2=f"{NRF_APP_NAME}"
+    )
     await ops_test.model.wait_for_idle(
         apps=[APP_NAME],
-        status="blocked",  # TODO: Change status from to ´´`active` when provider side of `fiveg_nrf` interface is ready  # noqa: E501, W503
+        status="active",
         timeout=100,
     )
