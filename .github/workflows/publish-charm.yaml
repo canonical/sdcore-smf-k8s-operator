@@ -21,9 +21,12 @@ jobs:
       - name: Move charm in current directory
         run: find ./ -name sdcore-smf_ubuntu-22.04-amd64.charm -exec mv -t ./ {} \;
       - name: Select Charmhub channel
-        uses: canonical/charming-actions/channel@2.2.5
+        uses: canonical/charming-actions/channel@2.3.0
         id: channel
       - name: Upload charm to Charmhub
-        env:
-          CHARMCRAFT_AUTH: ${{ secrets.CHARMCRAFT_AUTH }}
-        run: charmcraft upload ./sdcore-smf_ubuntu-22.04-amd64.charm --release ${{ steps.channel.outputs.name }}
+        uses: canonical/charming-actions/upload-charm@2.3.0
+        with:
+          built-charm-path: "sdcore-smf_ubuntu-22.04-amd64.charm"
+          credentials: "${{ secrets.CHARMCRAFT_AUTH }}"
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+          channel: "${{ steps.channel.outputs.name }}"

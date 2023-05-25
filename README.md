@@ -9,10 +9,10 @@
   </a>
   <br/>
   <br/>
-  <h1>SD-CORE SMF Operator</h1>
+  <h1>SD-Core SMF Operator</h1>
 </div>
 
-Charmed Operator for the SD-CORE Session Management Function (SMF).
+Charmed Operator for the SD-Core Session Management Function (SMF).
 
 # Usage
 
