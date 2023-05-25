@@ -1,0 +1,37 @@
+name: sdcore-smf
+display-name: SD-Core 5G SMF
+summary: Charmed Operator for the SD-Core Session Management Function (SMF).
+description: Charmed Operator for the SD-Core Session Management Function (SMF).
+
+assumes:
+  - k8s-api
+
+containers:
+  smf:
+    resource: smf-image
+    mounts:
+      - storage: config
+        location: /etc/smf
+
+resources:
+  smf-image:
+    type: oci-image
+    description: OCI image for 5G SMF
+    upstream-source: omecproject/5gc-smf:master-13e5671
+
+storage:
+  config:
+    type: filesystem
+    minimum-size: 1M
+
+provides:
+  metrics-endpoint:
+    interface: prometheus_scrape
+
+requires:
+  default-database:
+    interface: mongodb_client
+  smf-database:
+    interface: mongodb_client
+  fiveg_nrf:
+    interface: fiveg_nrf

@@ -1,0 +1,60 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+# SPDX-FileCopyrightText: 2021 Open Networking Foundation <info@opennetworking.org>
+# Copyright 2019 free5GC.org
+#
+# SPDX-License-Identifier: Apache-2.0
+
+info:
+  version: 1.0.0
+  description: SMF initial local configuration
+
+configuration:
+  smfDBName: sdcore_smf
+  enableDBStore: false
+  enableUPFAdapter: true
+  debugProfilePort: 5001
+  mongodb:
+    name: free5gc
+    url: http://1.1.1.1
+  smfName: SMF # the name of this SMF
+  sbi: # Service-based interface information
+    scheme: http # the protocol for sbi (http or https)
+    registerIPv4: sdcore-smf.whatever.svc.cluster.local # IP used to register to NRF
+    bindingIPv4: smf # IP used to bind the service
+    port: 29502 # Port used to bind the service
+    tls: # the local path of TLS key
+      key: free5gc/support/TLS/smf.key # SMF TLS Certificate
+      pem: free5gc/support/TLS/smf.pem # SMF TLS Private key
+  serviceNameList: # the SBI services provided by this SMF, refer to TS 29.502
+    - nsmf-pdusession # Nsmf_PDUSession service
+    - nsmf-event-exposure # Nsmf_EventExposure service
+    - nsmf-oam # OAM service
+  pfcp: # the IP address of N4 interface on this SMF (PFCP)
+    addr: 1.1.1.1
+  nrfUri: http://nrf.com:8080 # a valid URI of NRF
+
+# the kind of log output
+# debugLevel: how detailed to output, value: trace, debug, info, warn, error, fatal, panic
+# ReportCaller: enable the caller report or not, value: true or false
+logger:
+  SMF:
+    debugLevel: debug
+    ReportCaller: false
+  NAS:
+    debugLevel: debug
+    ReportCaller: false
+  NGAP:
+    debugLevel: debug
+    ReportCaller: false
+  Aper:
+    debugLevel: info
+    ReportCaller: false
+  PathUtil:
+    debugLevel: debug
+    ReportCaller: false
+  OpenApi:
+    debugLevel: debug
+    ReportCaller: false
+  PFCP:
+    debugLevel: debug
+    ReportCaller: false

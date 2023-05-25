@@ -1,0 +1,32 @@
+name: publish-charm
+
+on:
+  workflow_call:
+    secrets:
+      CHARMCRAFT_AUTH:
+        required: true
+
+jobs:
+  publish-charm:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Install charmcraft
+        run: sudo snap install charmcraft --classic
+      - name: Fetch Tested Charm
+        uses: actions/download-artifact@v3
+        with:
+          name: tested-charm
+      - name: Move charm in current directory
+        run: find ./ -name sdcore-smf_ubuntu-22.04-amd64.charm -exec mv -t ./ {} \;
+      - name: Select Charmhub channel
+        uses: canonical/charming-actions/channel@2.3.0
+        id: channel
+      - name: Upload charm to Charmhub
+        uses: canonical/charming-actions/upload-charm@2.3.0
+        with:
+          built-charm-path: "sdcore-smf_ubuntu-22.04-amd64.charm"
+          credentials: "${{ secrets.CHARMCRAFT_AUTH }}"
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+          channel: "${{ steps.channel.outputs.name }}"
