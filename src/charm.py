@@ -139,16 +139,31 @@ class SMFOperatorCharm(CharmBase):
                 f"Waiting for `{UEROUTING_CONFIG_FILE}` config file to be pushed to workload container"  # noqa: W505, E501
             )
             return
-        self._update_config_file()
-        self._container.add_layer("smf", self._pebble_layer, combine=True)
-        self._container.replan()
+        if self._update_config_file():
+            self._configure_pebble(restart=True)
+        else:
+            self._configure_pebble()
         self.unit.status = ActiveStatus()
 
-    def _update_config_file(self) -> None:
+    def _configure_pebble(self, restart=False) -> None:
+        """Configures the Pebble layer.
+
+        Args:
+            restart (bool): Whether to restart the SMF container.
+        """
+        self._container.add_layer("smf", self._pebble_layer, combine=True)
+        if restart:
+            self._container.restart(self._service_name)
+            return
+        self._container.replan()
+
+    def _update_config_file(self) -> bool:
         """Updates config file.
 
         Writes the config file if it does not exist or
-        if the content does not match.
+        the content does not match.
+
+        Returns: True if config file was updated, False otherwise.
         """
         content = self._render_config_file(
             default_database_name=DEFAULT_DATABASE_NAME,
@@ -163,6 +178,8 @@ class SMFOperatorCharm(CharmBase):
             content=content
         ):
             self._write_config_file(content=content)
+            return True
+        return False
 
     def _write_config_file(self, content: str) -> None:
         """Writes config file to workload.
