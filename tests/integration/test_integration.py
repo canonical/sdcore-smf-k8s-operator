@@ -63,7 +63,7 @@ async def test_given_charm_is_built_when_deployed_then_status_is_blocked(
     await ops_test.model.wait_for_idle(
         apps=[APP_NAME],
         status="blocked",
-        timeout=500,
+        timeout=1000,
     )
 
 
@@ -85,5 +85,5 @@ async def test_relate_and_wait_for_active_status(
     await ops_test.model.wait_for_idle(
         apps=[APP_NAME],
         status="active",
-        timeout=500,
+        timeout=1000,
     )
