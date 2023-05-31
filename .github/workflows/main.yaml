@@ -1,0 +1,37 @@
+name: Main branch CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  lint-report:
+    uses: canonical/sdcore-github-workflows/.github/workflows/lint-report.yaml@main
+
+  static-analysis:
+    uses: canonical/sdcore-github-workflows/.github/workflows/static-analysis.yaml@main
+
+  unit-tests-with-coverage:
+    uses: canonical/sdcore-github-workflows/.github/workflows/unit-test.yaml@main
+
+  integration-test:
+    uses: canonical/sdcore-github-workflows/.github/workflows/integration-test.yaml@main
+    with:
+      charm-file-name: "sdcore-smf_ubuntu-22.04-amd64.charm"
+
+  publish-charm:
+    name: Publish Charm
+    needs:
+      - lint-report
+      - static-analysis
+      - unit-tests-with-coverage
+      - integration-test
+    if: ${{ github.ref_name == 'main' }}
+    uses: canonical/sdcore-github-workflows/.github/workflows/publish-charm.yaml@main
+    with:
+      charm-file-name: "sdcore-smf_ubuntu-22.04-amd64.charm"
+    secrets: inherit
