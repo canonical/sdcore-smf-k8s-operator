@@ -11,11 +11,11 @@ info:
 configuration:
   smfDBName: sdcore_smf
   enableDBStore: false
-  enableUPFAdapter: true
+  enableUPFAdapter: false
   debugProfilePort: 5001
   mongodb:
     name: free5gc
-    url: http://1.1.1.1
+    url: http://6.5.6.5
   smfName: SMF # the name of this SMF
   sbi: # Service-based interface information
     scheme: http # the protocol for sbi (http or https)

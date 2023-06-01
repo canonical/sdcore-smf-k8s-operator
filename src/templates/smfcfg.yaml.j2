@@ -9,13 +9,13 @@ info:
   description: SMF initial local configuration
 
 configuration:
-  smfDBName: {{ smf_database_name }}
+  smfDBName: {{ database_name }}
   enableDBStore: false
-  enableUPFAdapter: true
+  enableUPFAdapter: false
   debugProfilePort: 5001
   mongodb:
-    name: {{ default_database_name }}
-    url: {{ default_database_url }}
+    name: free5gc
+    url: {{ database_url }}
   smfName: SMF # the name of this SMF
   sbi: # Service-based interface information
     scheme: http # the protocol for sbi (http or https)
