@@ -14,7 +14,6 @@ configuration:
   enableUPFAdapter: false
   debugProfilePort: 5001
   mongodb:
-    name: free5gc
     url: http://6.5.6.5
   smfName: SMF # the name of this SMF
   sbi: # Service-based interface information
