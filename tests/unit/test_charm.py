@@ -23,7 +23,7 @@ class TestCharm(unittest.TestCase):
     def setUp(self):
         self.maxDiff = None
         self.namespace = "whatever"
-        self.default_database_application_name = "mongodb-k8s"
+        self.database_application_name = "mongodb-k8s"
         self.metadata = self._get_metadata()
         self.container_name = list(self.metadata["containers"].keys())[0]
         self.harness = testing.Harness(SMFOperatorCharm)
@@ -55,31 +55,17 @@ class TestCharm(unittest.TestCase):
 
         return content
 
-    def _create_default_database_relation(self) -> int:
-        """Creates database relation.
-
-        Returns:
-            int: relation id.
-        """
-        relation_id = self.harness.add_relation(
-            relation_name="default-database", remote_app=self.default_database_application_name
-        )
-        self.harness.add_relation_unit(
-            relation_id=relation_id, remote_unit_name=f"{self.default_database_application_name}/0"
-        )
-        return relation_id
-
-    def _create_smf_database_relation(self) -> int:
+    def _create_database_relation(self) -> int:
         """Creates SMF database relation.
 
         Returns:
             int: relation id.
         """
         relation_id = self.harness.add_relation(
-            relation_name="smf-database", remote_app=self.default_database_application_name
+            relation_name="database", remote_app=self.database_application_name
         )
         self.harness.add_relation_unit(
-            relation_id=relation_id, remote_unit_name=f"{self.default_database_application_name}/0"
+            relation_id=relation_id, remote_unit_name=f"{self.database_application_name}/0"
         )
         return relation_id
 
@@ -96,13 +82,13 @@ class TestCharm(unittest.TestCase):
         return relation_id
 
     def _database_is_available(self) -> str:
-        database_url = "http://1.1.1.1"
-        database_username = "banana"
-        database_password = "pizza"
-        database_relation_id = self._create_default_database_relation()
+        database_url = "http://6.5.6.5"
+        database_username = "rock"
+        database_password = "paper"
+        database_relation_id = self._create_database_relation()
         self.harness.update_relation_data(
             relation_id=database_relation_id,
-            app_or_unit=self.default_database_application_name,
+            app_or_unit=self.database_application_name,
             key_values={
                 "username": database_username,
                 "password": database_password,
@@ -110,22 +96,6 @@ class TestCharm(unittest.TestCase):
             },
         )
         return database_url
-
-    def _smf_database_is_available(self) -> str:
-        smf_database_url = "http://6.5.6.5"
-        smf_database_username = "rock"
-        smf_database_password = "paper"
-        smf_database_relation_id = self._create_smf_database_relation()
-        self.harness.update_relation_data(
-            relation_id=smf_database_relation_id,
-            app_or_unit=self.default_database_application_name,
-            key_values={
-                "username": smf_database_username,
-                "password": smf_database_password,
-                "uris": "".join([smf_database_url]),
-            },
-        )
-        return smf_database_url
 
     def test_given_container_cant_connect_when_on_install_then_status_is_waiting(
         self,
@@ -156,9 +126,9 @@ class TestCharm(unittest.TestCase):
         )
 
     @patch("ops.model.Container.exists")
-    @patch("ops.model.Container.push")
+    @patch("ops.model.Container.push", new=Mock)
     def test_given_container_can_connect_and_storage_is_not_attached_when_on_install_then_status_is_waiting(  # noqa: E501
-        self, patch_push, patch_exists
+        self, patch_exists
     ):
         self.harness.set_can_connect(container=self.container_name, val=True)
         patch_exists.return_value = False
@@ -177,26 +147,13 @@ class TestCharm(unittest.TestCase):
 
         self.assertEqual(
             self.harness.model.unit.status,
-            BlockedStatus("Waiting for `default-database` relation to be created"),
-        )
-
-    def test_given_smf_database_relation_not_created_when_configure_sdcore_smf_is_called_then_status_is_blocked(  # noqa: E501
-        self,
-    ):
-        self._create_default_database_relation()
-
-        self.harness.charm._configure_sdcore_smf(event=Mock())
-
-        self.assertEqual(
-            self.harness.model.unit.status,
-            BlockedStatus("Waiting for `smf-database` relation to be created"),
+            BlockedStatus("Waiting for `database` relation to be created"),
         )
 
     def test_given_nrf_relation_not_created_when_configure_sdcore_smf_is_called_then_status_is_blocked(  # noqa: E501
         self,
     ):
-        self._create_default_database_relation()
-        self._create_smf_database_relation()
+        self._create_database_relation()
 
         self.harness.charm._configure_sdcore_smf(event=Mock())
 
@@ -208,8 +165,7 @@ class TestCharm(unittest.TestCase):
     def test_given_container_cant_connect_when_configure_sdcore_smf_is_called_is_called_then_status_is_waiting(  # noqa: E501
         self,
     ):
-        self._create_default_database_relation()
-        self._create_smf_database_relation()
+        self._create_database_relation()
         self._create_nrf_relation()
         self.harness.set_can_connect(container=self.container_name, val=False)
 
@@ -222,8 +178,7 @@ class TestCharm(unittest.TestCase):
     def test_given_database_relation_not_available_when_configure_sdcore_smf_is_called_then_status_is_waiting(  # noqa: E501
         self,
     ):
-        self._create_default_database_relation()
-        self._create_smf_database_relation()
+        self._create_database_relation()
         self._create_nrf_relation()
         self.harness.set_can_connect(container=self.container_name, val=True)
 
@@ -231,29 +186,13 @@ class TestCharm(unittest.TestCase):
 
         self.assertEqual(
             self.harness.model.unit.status,
-            WaitingStatus("Waiting for `default-database` relation to be available"),
-        )
-
-    def test_given_smf_database_relation_not_available_when_configure_sdcore_smf_is_called_then_status_is_waiting(  # noqa: E501
-        self,
-    ):
-        self._database_is_available()
-        self._create_smf_database_relation()
-        self._create_nrf_relation()
-        self.harness.set_can_connect(container=self.container_name, val=True)
-
-        self.harness.charm._configure_sdcore_smf(event=Mock())
-
-        self.assertEqual(
-            self.harness.model.unit.status,
-            WaitingStatus("Waiting for `smf-database` relation to be available"),
+            WaitingStatus("Waiting for `database` relation to be available"),
         )
 
     def test_given_nrf_is_not_available_when_configure_sdcore_smf_is_called_then_status_is_waiting(  # noqa: E501
         self,
     ):
         self._database_is_available()
-        self._smf_database_is_available()
         self._create_nrf_relation()
         self.harness.set_can_connect(container=self.container_name, val=True)
 
@@ -272,7 +211,6 @@ class TestCharm(unittest.TestCase):
         patch_nrf_url,
     ):
         self._database_is_available()
-        self._smf_database_is_available()
         self._create_nrf_relation()
         self.harness.set_can_connect(container=self.container_name, val=True)
         patch_exists.side_effect = [True, False]
@@ -293,22 +231,23 @@ class TestCharm(unittest.TestCase):
         self, patch_exists, patch_nrf_url
     ):
         self._database_is_available()
-        self._smf_database_is_available()
         self._create_nrf_relation()
         self.harness.set_can_connect(container=self.container_name, val=True)
         patch_exists.return_value = [False]
         patch_nrf_url.return_value = "http://nrf.com:8080"
 
-    @patch("ops.model.Container.pull")
+    @patch("ops.model.Container.pull", new=Mock)
     @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.nrf_url")
-    @patch("ops.model.Container.push")
+    @patch("ops.model.Container.push", new=Mock)
     @patch("charm.check_output")
     @patch("ops.model.Container.exists")
     def test_given_config_files_and_relations_are_created_when_configure_sdcore_smf_is_called_then_status_is_active(  # noqa: E501
-        self, patch_exists, patch_check_output, patch_push, patch_nrf_url, patch_pull
+        self,
+        patch_exists,
+        patch_check_output,
+        patch_nrf_url,
     ):
         self._database_is_available()
-        self._smf_database_is_available()
         self._create_nrf_relation()
         self.harness.set_can_connect(container=self.container_name, val=True)
         patch_exists.side_effect = [True, True, True]
@@ -322,7 +261,7 @@ class TestCharm(unittest.TestCase):
             ActiveStatus(),
         )
 
-    @patch("ops.model.Container.pull")
+    @patch("ops.model.Container.pull", new=Mock)
     @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.nrf_url", new_callable=PropertyMock)
     @patch("ops.model.Container.exists")
     @patch("charm.check_output")
@@ -333,12 +272,10 @@ class TestCharm(unittest.TestCase):
         patch_check_output,
         patch_exists,
         patch_nrf_url,
-        patch_pull,
     ):
         pod_ip = "1.1.1.1"
         patch_check_output.return_value = pod_ip.encode()
         self._database_is_available()
-        self._smf_database_is_available()
         self._create_nrf_relation()
         self.harness.set_can_connect(container="smf", val=True)
         patch_exists.side_effect = [True, True, False]
@@ -369,7 +306,6 @@ class TestCharm(unittest.TestCase):
         patch_check_output.return_value = pod_ip.encode()
         patch_pull.return_value = StringIO(self._read_file("tests/unit/expected_smfcfg.yaml"))
         self._database_is_available()
-        self._smf_database_is_available()
         self._create_nrf_relation()
         self.harness.set_can_connect(container="smf", val=True)
         patch_exists.side_effect = [True, True, True]
@@ -396,7 +332,6 @@ class TestCharm(unittest.TestCase):
         patch_check_output.return_value = pod_ip.encode()
         patch_pull.return_value = StringIO("super different config file content")
         self._database_is_available()
-        self._smf_database_is_available()
         self._create_nrf_relation()
         self.harness.set_can_connect(container="smf", val=True)
         patch_exists.side_effect = [True, True, True]
@@ -410,18 +345,17 @@ class TestCharm(unittest.TestCase):
             make_dirs=True,
         )
 
-    @patch("ops.model.Container.pull")
+    @patch("ops.model.Container.pull", new=Mock)
     @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.nrf_url")
-    @patch("ops.model.Container.push")
+    @patch("ops.model.Container.push", new=Mock)
     @patch("charm.check_output")
     @patch("ops.model.Container.exists")
     def test_given_config_files_and_relations_are_created_when_configure_sdcore_smf_is_called_then_expected_plan_is_applied(  # noqa: E501
-        self, patch_exists, patch_check_output, patch_push, patch_nrf_url, patch_pull
+        self, patch_exists, patch_check_output, patch_nrf_url
     ):
         pod_ip = "1.1.1.1"
         patch_check_output.return_value = pod_ip.encode()
         self._database_is_available()
-        self._smf_database_is_available()
         self._create_nrf_relation()
         self.harness.set_can_connect(container=self.container_name, val=True)
         patch_nrf_url.return_value = "http://nrf:8000"

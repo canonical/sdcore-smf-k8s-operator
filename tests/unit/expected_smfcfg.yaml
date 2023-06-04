@@ -11,16 +11,15 @@ info:
 configuration:
   smfDBName: sdcore_smf
   enableDBStore: false
-  enableUPFAdapter: true
+  enableUPFAdapter: false
   debugProfilePort: 5001
   mongodb:
-    name: free5gc
-    url: http://1.1.1.1
+    url: http://6.5.6.5
   smfName: SMF # the name of this SMF
   sbi: # Service-based interface information
     scheme: http # the protocol for sbi (http or https)
     registerIPv4: sdcore-smf.whatever.svc.cluster.local # IP used to register to NRF
-    bindingIPv4: smf # IP used to bind the service
+    bindingIPv4: 0.0.0.0 # IP used to bind the service
     port: 29502 # Port used to bind the service
     tls: # the local path of TLS key
       key: free5gc/support/TLS/smf.key # SMF TLS Certificate

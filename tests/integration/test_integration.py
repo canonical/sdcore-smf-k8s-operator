@@ -76,10 +76,7 @@ async def test_relate_and_wait_for_active_status(
         relation1=f"{NRF_APP_NAME}:database", relation2=f"{DATABASE_APP_NAME}"
     )
     await ops_test.model.add_relation(
-        relation1=f"{APP_NAME}:default-database", relation2=f"{DATABASE_APP_NAME}"
-    )
-    await ops_test.model.add_relation(
-        relation1=f"{APP_NAME}:smf-database", relation2=f"{DATABASE_APP_NAME}"
+        relation1=f"{APP_NAME}:database", relation2=f"{DATABASE_APP_NAME}"
     )
     await ops_test.model.add_relation(relation1=APP_NAME, relation2=NRF_APP_NAME)
     await ops_test.model.wait_for_idle(
