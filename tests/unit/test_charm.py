@@ -203,15 +203,18 @@ class TestCharm(unittest.TestCase):
             WaitingStatus("Waiting for NRF relation to be available"),
         )
 
+    @patch("charm.check_output")
     @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.nrf_url")
     @patch("ops.model.Container.exists")
     def test_given_ue_config_file_is_not_written_when_configure_sdcore_smf_is_called_then_status_is_waiting(  # noqa: E501
         self,
         patch_exists,
         patch_nrf_url,
+        patch_check_output,
     ):
         self._database_is_available()
         self._create_nrf_relation()
+        patch_check_output.return_value = b"1.1.1.1"
         self.harness.set_can_connect(container=self.container_name, val=True)
         patch_exists.side_effect = [True, False]
         patch_nrf_url.return_value = "http://nrf.com:8080"
@@ -259,6 +262,30 @@ class TestCharm(unittest.TestCase):
         self.assertEqual(
             self.harness.model.unit.status,
             ActiveStatus(),
+        )
+
+    @patch("ops.model.Container.pull", new=Mock)
+    @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.nrf_url")
+    @patch("ops.model.Container.push", new=Mock)
+    @patch("charm.check_output")
+    @patch("ops.model.Container.exists")
+    def test_given_ip_not_available_when_configure_then_status_is_waiting(
+        self,
+        patch_exists,
+        patch_check_output,
+        patch_nrf_url,
+    ):
+        self._database_is_available()
+        self._create_nrf_relation()
+        patch_exists.side_effect = [True, True, True]
+        patch_check_output.return_value = b""
+        patch_nrf_url.return_value = "http://nrf.com:8080"
+
+        self.harness.container_pebble_ready(container_name="smf")
+
+        self.assertEqual(
+            self.harness.model.unit.status,
+            WaitingStatus("Waiting for pod IP address to be available"),
         )
 
     @patch("ops.model.Container.pull", new=Mock)

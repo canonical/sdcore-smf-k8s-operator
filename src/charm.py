@@ -117,6 +117,10 @@ class SMFOperatorCharm(CharmBase):
             self.unit.status = WaitingStatus("Waiting for storage to be attached")
             event.defer()
             return
+        if not _get_pod_ip():
+            self.unit.status = WaitingStatus("Waiting for pod IP address to be available")
+            event.defer()
+            return
         if not self._ue_config_file_is_written():
             event.defer()
             self.unit.status = WaitingStatus(
@@ -155,7 +159,7 @@ class SMFOperatorCharm(CharmBase):
             smf_url=self._smf_hostname,
             smf_sbi_port=SMF_SBI_PORT,
             nrf_url=self._nrf_requires.nrf_url,
-            pod_ip=str(self._pod_ip()),
+            pod_ip=_get_pod_ip(),  # type: ignore[arg-type]
         )
         if not self._config_file_is_written() or not self._config_file_content_matches(
             content=content
@@ -327,7 +331,7 @@ class SMFOperatorCharm(CharmBase):
             "GRPC_VERBOSITY": "debug",
             "PFCP_PORT_UPF": "8805",
             "MANAGED_BY_CONFIG_POD": "true",
-            "POD_IP": str(self._pod_ip()),
+            "POD_IP": _get_pod_ip(),
         }
 
     @property
@@ -339,13 +343,15 @@ class SMFOperatorCharm(CharmBase):
         """
         return f"{self.model.app.name}.{self.model.name}.svc.cluster.local"
 
-    def _pod_ip(self) -> Optional[IPv4Address]:
-        """Get the IP address of the Kubernetes pod.
 
-        Returns:
-            Optional[IPv4Address]: IP address of the Kubernetes pod.
-        """
-        return IPv4Address(check_output(["unit-get", "private-address"]).decode().strip())
+def _get_pod_ip() -> Optional[str]:
+    """Returns the pod IP using juju client.
+
+    Returns:
+        str: The pod IP.
+    """
+    ip_address = check_output(["unit-get", "private-address"])
+    return str(IPv4Address(ip_address.decode().strip())) if ip_address else None
 
 
 if __name__ == "__main__":  # pragma: nocover
