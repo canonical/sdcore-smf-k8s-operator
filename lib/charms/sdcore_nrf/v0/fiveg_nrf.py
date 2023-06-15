@@ -13,7 +13,7 @@ NRF information and another charm requiring this information.
 From a charm directory, fetch the library using `charmcraft`:
 
 ```shell
-charmcraft fetch-lib charms.sdcore_nrf_operator.v0.fiveg_nrf
+charmcraft fetch-lib charms.sdcore_nrf.v0.fiveg_nrf
 ```
 
 Add the following libraries to the charm's `requirements.txt` file:
@@ -41,7 +41,7 @@ class DummyFiveGNRFRequirerCharm(CharmBase):
         self.framework.observe(self.nrf_requirer.on.nrf_available, self._on_nrf_available)
 
     def _on_nrf_available(self, event: NRFAvailableEvent):
-        nrf_url = event.url
+        nrf_url = self.nrf_requirer.nrf_url
         <do something with the nrf_url>
 
 
@@ -110,11 +110,9 @@ LIBAPI = 0
 
 # Increment this PATCH version before using `charmcraft publish-lib` or reset
 # to 0 if you are raising the major API version
-LIBPATCH = 2
+LIBPATCH = 5
 
-PYDEPS = [
-    "pydantic",
-]
+PYDEPS = ["pydantic", "pytest-interface-tester"]
 
 
 logger = logging.getLogger(__name__)
@@ -160,7 +158,7 @@ def data_matches_provider_schema(data: dict) -> bool:
         ProviderSchema(app=data)
         return True
     except ValidationError as e:
-        logger.error("Invalid data: %s", e)
+        logger.debug("Invalid data: %s", e)
         return False
 
 
@@ -241,7 +239,7 @@ class NRFRequires(Object):
             return None
         remote_app_relation_data = dict(relation.data[relation.app])
         if not data_matches_provider_schema(remote_app_relation_data):
-            logger.error("Invalid relation data: %s", remote_app_relation_data)
+            logger.debug("Invalid relation data: %s", remote_app_relation_data)
             return None
         return remote_app_relation_data
 
