@@ -395,7 +395,7 @@ class TestCharm(unittest.TestCase):
                 "smf": {
                     "override": "replace",
                     "startup": "enabled",
-                    "command": "/free5gc/smf/smf -smfcfg /etc/smf/smfcfg.yaml "
+                    "command": "/bin/smf -smfcfg /etc/smf/smfcfg.yaml "
                     "-uerouting /etc/smf/uerouting.yaml",
                     "environment": {
                         "GRPC_GO_LOG_VERBOSITY_LEVEL": "99",

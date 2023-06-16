@@ -17,7 +17,7 @@ resources:
   smf-image:
     type: oci-image
     description: OCI image for 5G SMF
-    upstream-source: omecproject/5gc-smf:master-3fa04ea
+    upstream-source: ghcr.io/canonical/sdcore-smf:1.3
 
 storage:
   config:

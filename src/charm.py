@@ -310,7 +310,7 @@ class SMFOperatorCharm(CharmBase):
                 self._service_name: {
                     "override": "replace",
                     "startup": "enabled",
-                    "command": f"/free5gc/smf/smf -smfcfg {BASE_CONFIG_PATH}/{CONFIG_FILE} "
+                    "command": f"/bin/smf -smfcfg {BASE_CONFIG_PATH}/{CONFIG_FILE} "
                     f"-uerouting {BASE_CONFIG_PATH}/{UEROUTING_CONFIG_FILE}",
                     "environment": self._environment_variables,
                 }
