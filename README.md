@@ -27,4 +27,4 @@ juju integrate sdcore-smf:fiveg_nrf sdcore-nrf
 
 # Image
 
-**smf**: `omecproject/5gc-smf:master-3fa04ea`
+**smf**: `ghcr.io/canonical/sdcore-smf:1.3`
