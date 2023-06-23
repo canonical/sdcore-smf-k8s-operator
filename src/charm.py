@@ -34,14 +34,14 @@ from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
 
 logger = logging.getLogger(__name__)
 
-BASE_CONFIG_PATH = "/etc/smf/config"
+BASE_CONFIG_PATH = "/etc/smf"
 CONFIG_FILE = "smfcfg.yaml"
 UEROUTING_CONFIG_FILE = "uerouting.yaml"
 DATABASE_NAME = "sdcore_smf"
 SMF_SBI_PORT = 29502
 PFCP_PORT = 8805
 PROMETHEUS_PORT = 9089
-CERTS_DIR_PATH = "/etc/smf/certs"
+CERTS_DIR_PATH = "/support/TLS"  # The certs directory is hardcoded in the SMF code.
 PRIVATE_KEY_NAME = "smf.key"
 CSR_NAME = "smf.csr"
 CERTIFICATE_NAME = "smf.pem"

@@ -11,9 +11,9 @@ containers:
     resource: smf-image
     mounts:
       - storage: config
-        location: /etc/smf/config
+        location: /etc/smf
       - storage: certs
-        location: /etc/smf/certs
+        location: /support/TLS
 
 resources:
   smf-image:

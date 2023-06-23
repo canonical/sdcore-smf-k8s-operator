@@ -22,8 +22,8 @@ configuration:
     bindingIPv4: 0.0.0.0
     port: 29502
     tls:
-      key: /etc/smf/certs/smf.key
-      pem: /etc/smf/certs/smf.pem
+      key: /support/TLS/smf.key
+      pem: /support/TLS/smf.pem
   serviceNameList:
     - nsmf-pdusession
     - nsmf-event-exposure

@@ -121,7 +121,7 @@ class TestCharm(unittest.TestCase):
 
         expected_config_file_content = self._read_file("src/uerouting.yaml")
         patch_push.assert_called_with(
-            path="/etc/smf/config/uerouting.yaml",
+            path="/etc/smf/uerouting.yaml",
             source=expected_config_file_content,
             make_dirs=True,
         )
@@ -312,7 +312,7 @@ class TestCharm(unittest.TestCase):
         self.harness.charm._configure_sdcore_smf(event=Mock())
 
         patch_push.assert_called_with(
-            path="/etc/smf/config/smfcfg.yaml",
+            path="/etc/smf/smfcfg.yaml",
             source=self._read_file("tests/unit/expected_smfcfg.yaml"),
             make_dirs=True,
         )
@@ -368,7 +368,7 @@ class TestCharm(unittest.TestCase):
         self.harness.charm._configure_sdcore_smf(event=Mock())
 
         patch_push.assert_called_with(
-            path="/etc/smf/config/smfcfg.yaml",
+            path="/etc/smf/smfcfg.yaml",
             source=self._read_file("tests/unit/expected_smfcfg.yaml"),
             make_dirs=True,
         )
@@ -396,8 +396,8 @@ class TestCharm(unittest.TestCase):
                 "smf": {
                     "override": "replace",
                     "startup": "enabled",
-                    "command": "/bin/smf -smfcfg /etc/smf/config/smfcfg.yaml "
-                    "-uerouting /etc/smf/config/uerouting.yaml",
+                    "command": "/bin/smf -smfcfg /etc/smf/smfcfg.yaml "
+                    "-uerouting /etc/smf/uerouting.yaml",
                     "environment": {
                         "GRPC_GO_LOG_VERBOSITY_LEVEL": "99",
                         "GRPC_GO_LOG_SEVERITY_LEVEL": "info",
@@ -424,7 +424,7 @@ class TestCharm(unittest.TestCase):
 
         self.harness.charm._on_certificates_relation_created(event=Mock)
 
-        patch_push.assert_called_with(path="/etc/smf/certs/smf.key", source=private_key.decode())
+        patch_push.assert_called_with(path="/support/TLS/smf.key", source=private_key.decode())
 
     @patch("ops.model.Container.remove_path")
     @patch("ops.model.Container.exists")
@@ -436,9 +436,9 @@ class TestCharm(unittest.TestCase):
 
         self.harness.charm._on_certificates_relation_broken(event=Mock)
 
-        patch_remove_path.assert_any_call(path="/etc/smf/certs/smf.pem")
-        patch_remove_path.assert_any_call(path="/etc/smf/certs/smf.key")
-        patch_remove_path.assert_any_call(path="/etc/smf/certs/smf.csr")
+        patch_remove_path.assert_any_call(path="/support/TLS/smf.pem")
+        patch_remove_path.assert_any_call(path="/support/TLS/smf.key")
+        patch_remove_path.assert_any_call(path="/support/TLS/smf.csr")
 
     @patch(
         "charms.tls_certificates_interface.v2.tls_certificates.TLSCertificatesRequiresV2.request_certificate_creation",  # noqa: E501
@@ -459,7 +459,7 @@ class TestCharm(unittest.TestCase):
 
         self.harness.charm._on_certificates_relation_joined(event=Mock)
 
-        patch_push.assert_called_with(path="/etc/smf/certs/smf.csr", source=csr.decode())
+        patch_push.assert_called_with(path="/support/TLS/smf.csr", source=csr.decode())
 
     @patch(
         "charms.tls_certificates_interface.v2.tls_certificates.TLSCertificatesRequiresV2.request_certificate_creation",  # noqa: E501
@@ -505,7 +505,7 @@ class TestCharm(unittest.TestCase):
 
         self.harness.charm._on_certificate_available(event=event)
 
-        patch_push.assert_called_with(path="/etc/smf/certs/smf.pem", source=certificate)
+        patch_push.assert_called_with(path="/support/TLS/smf.pem", source=certificate)
 
     @patch("ops.model.Container.pull")
     @patch("ops.model.Container.exists")
