@@ -29,6 +29,7 @@ class TestCharm(unittest.TestCase):
         self.harness = testing.Harness(SMFOperatorCharm)
         self.harness.set_model_name(name=self.namespace)
         self.addCleanup(self.harness.cleanup)
+        self.harness.set_leader(is_leader=True)
         self.harness.begin()
 
     def _get_metadata(self) -> dict:
@@ -253,7 +254,7 @@ class TestCharm(unittest.TestCase):
         self._database_is_available()
         self._create_nrf_relation()
         self.harness.set_can_connect(container=self.container_name, val=True)
-        patch_exists.side_effect = [True, True, True]
+        patch_exists.return_value = True
         patch_check_output.return_value = b"1.1.1.1"
         patch_nrf_url.return_value = "http://nrf.com:8080"
 
@@ -305,7 +306,7 @@ class TestCharm(unittest.TestCase):
         self._database_is_available()
         self._create_nrf_relation()
         self.harness.set_can_connect(container="smf", val=True)
-        patch_exists.side_effect = [True, True, False]
+        patch_exists.side_effect = [True, True, False, True]
         patch_nrf_url.return_value = "http://nrf.com:8080"
 
         self.harness.charm._configure_sdcore_smf(event=Mock())
@@ -332,11 +333,11 @@ class TestCharm(unittest.TestCase):
         pod_ip = "1.1.1.1"
         patch_check_output.return_value = pod_ip.encode()
         patch_pull.return_value = StringIO(self._read_file("tests/unit/expected_smfcfg.yaml"))
+        patch_exists.side_effect = [True, False]
+        patch_nrf_url.return_value = "http://nrf.com:8080"
         self._database_is_available()
         self._create_nrf_relation()
         self.harness.set_can_connect(container="smf", val=True)
-        patch_exists.side_effect = [True, True, True]
-        patch_nrf_url.return_value = "http://nrf.com:8080"
 
         self.harness.charm._configure_sdcore_smf(event=Mock())
 
@@ -361,7 +362,7 @@ class TestCharm(unittest.TestCase):
         self._database_is_available()
         self._create_nrf_relation()
         self.harness.set_can_connect(container="smf", val=True)
-        patch_exists.side_effect = [True, True, True]
+        patch_exists.side_effect = [True, True, False, True]
         patch_nrf_url.return_value = "http://nrf.com:8080"
 
         self.harness.charm._configure_sdcore_smf(event=Mock())
@@ -386,7 +387,7 @@ class TestCharm(unittest.TestCase):
         self._create_nrf_relation()
         self.harness.set_can_connect(container=self.container_name, val=True)
         patch_nrf_url.return_value = "http://nrf:8000"
-        patch_exists.side_effect = [True, True, True]
+        patch_exists.return_value = True
 
         self.harness.charm._configure_sdcore_smf(event=Mock())
 
@@ -411,3 +412,159 @@ class TestCharm(unittest.TestCase):
         }
         updated_plan = self.harness.get_container_pebble_plan(self.container_name).to_dict()
         self.assertEqual(expected_plan, updated_plan)
+
+    @patch("charm.generate_private_key")
+    @patch("ops.model.Container.push")
+    def test_given_can_connect_when_on_certificates_relation_created_then_private_key_is_generated(
+        self, patch_push, patch_generate_private_key
+    ):
+        private_key = b"whatever key content"
+        self.harness.set_can_connect(container="smf", val=True)
+        patch_generate_private_key.return_value = private_key
+
+        self.harness.charm._on_certificates_relation_created(event=Mock)
+
+        patch_push.assert_called_with(path="/support/TLS/smf.key", source=private_key.decode())
+
+    @patch("ops.model.Container.remove_path")
+    @patch("ops.model.Container.exists")
+    def test_given_certificates_are_stored_when_on_certificates_relation_broken_then_certificates_are_removed(  # noqa: E501
+        self, patch_exists, patch_remove_path
+    ):
+        patch_exists.return_value = True
+        self.harness.set_can_connect(container="smf", val=True)
+
+        self.harness.charm._on_certificates_relation_broken(event=Mock)
+
+        patch_remove_path.assert_any_call(path="/support/TLS/smf.pem")
+        patch_remove_path.assert_any_call(path="/support/TLS/smf.key")
+        patch_remove_path.assert_any_call(path="/support/TLS/smf.csr")
+
+    @patch(
+        "charms.tls_certificates_interface.v2.tls_certificates.TLSCertificatesRequiresV2.request_certificate_creation",  # noqa: E501
+        new=Mock,
+    )
+    @patch("ops.model.Container.push")
+    @patch("charm.generate_csr")
+    @patch("ops.model.Container.pull")
+    @patch("ops.model.Container.exists")
+    def test_given_private_key_exists_when_on_certificates_relation_joined_then_csr_is_generated(
+        self, patch_exists, patch_pull, patch_generate_csr, patch_push
+    ):
+        csr = b"whatever csr content"
+        patch_generate_csr.return_value = csr
+        patch_pull.return_value = StringIO("private key content")
+        patch_exists.return_value = True
+        self.harness.set_can_connect(container="smf", val=True)
+
+        self.harness.charm._on_certificates_relation_joined(event=Mock)
+
+        patch_push.assert_called_with(path="/support/TLS/smf.csr", source=csr.decode())
+
+    @patch(
+        "charms.tls_certificates_interface.v2.tls_certificates.TLSCertificatesRequiresV2.request_certificate_creation",  # noqa: E501
+    )
+    @patch("ops.model.Container.push", new=Mock)
+    @patch("charm.generate_csr")
+    @patch("ops.model.Container.pull")
+    @patch("ops.model.Container.exists")
+    def test_given_private_key_exists_when_on_certificates_relation_joined_then_cert_is_requested(
+        self,
+        patch_exists,
+        patch_pull,
+        patch_generate_csr,
+        patch_request_certificate_creation,
+    ):
+        csr = b"whatever csr content"
+        patch_generate_csr.return_value = csr
+        patch_pull.return_value = StringIO("private key content")
+        patch_exists.return_value = True
+        self.harness.set_can_connect(container="smf", val=True)
+
+        self.harness.charm._on_certificates_relation_joined(event=Mock)
+
+        patch_request_certificate_creation.assert_called_with(certificate_signing_request=csr)
+
+    @patch("ops.model.Container.pull")
+    @patch("ops.model.Container.exists")
+    @patch("ops.model.Container.push")
+    def test_given_csr_matches_stored_one_when_certificate_available_then_certificate_is_pushed(
+        self,
+        patch_push,
+        patch_exists,
+        patch_pull,
+    ):
+        csr = "Whatever CSR content"
+        patch_pull.return_value = StringIO(csr)
+        patch_exists.return_value = True
+        certificate = "Whatever certificate content"
+        event = Mock()
+        event.certificate = certificate
+        event.certificate_signing_request = csr
+        self.harness.set_can_connect(container="smf", val=True)
+
+        self.harness.charm._on_certificate_available(event=event)
+
+        patch_push.assert_called_with(path="/support/TLS/smf.pem", source=certificate)
+
+    @patch("ops.model.Container.pull")
+    @patch("ops.model.Container.exists")
+    @patch("ops.model.Container.push")
+    def test_given_csr_doesnt_match_stored_one_when_certificate_available_then_certificate_is_not_pushed(  # noqa: E501
+        self,
+        patch_push,
+        patch_exists,
+        patch_pull,
+    ):
+        patch_pull.return_value = StringIO("Stored CSR content")
+        patch_exists.return_value = True
+        certificate = "Whatever certificate content"
+        event = Mock()
+        event.certificate = certificate
+        event.certificate_signing_request = "Relation CSR content (different from stored one)"
+        self.harness.set_can_connect(container="smf", val=True)
+
+        self.harness.charm._on_certificate_available(event=event)
+
+        patch_push.assert_not_called()
+
+    @patch(
+        "charms.tls_certificates_interface.v2.tls_certificates.TLSCertificatesRequiresV2.request_certificate_creation",  # noqa: E501
+    )
+    @patch("ops.model.Container.push", new=Mock)
+    @patch("charm.generate_csr")
+    @patch("ops.model.Container.pull")
+    def test_given_certificate_does_not_match_stored_one_when_certificate_expiring_then_certificate_is_not_requested(  # noqa: E501
+        self, patch_pull, patch_generate_csr, patch_request_certificate_creation
+    ):
+        event = Mock()
+        patch_pull.return_value = StringIO("Stored certificate content")
+        event.certificate = "Relation certificate content (different from stored)"
+        csr = b"whatever csr content"
+        patch_generate_csr.return_value = csr
+        self.harness.set_can_connect(container="smf", val=True)
+
+        self.harness.charm._on_certificate_expiring(event=event)
+
+        patch_request_certificate_creation.assert_not_called()
+
+    @patch(
+        "charms.tls_certificates_interface.v2.tls_certificates.TLSCertificatesRequiresV2.request_certificate_creation",  # noqa: E501
+    )
+    @patch("ops.model.Container.push", new=Mock)
+    @patch("charm.generate_csr")
+    @patch("ops.model.Container.pull")
+    def test_given_certificate_matches_stored_one_when_certificate_expiring_then_certificate_is_requested(  # noqa: E501
+        self, patch_pull, patch_generate_csr, patch_request_certificate_creation
+    ):
+        certificate = "whatever certificate content"
+        event = Mock()
+        event.certificate = certificate
+        patch_pull.return_value = StringIO(certificate)
+        csr = b"whatever csr content"
+        patch_generate_csr.return_value = csr
+        self.harness.set_can_connect(container="smf", val=True)
+
+        self.harness.charm._on_certificate_expiring(event=event)
+
+        patch_request_certificate_creation.assert_called_with(certificate_signing_request=csr)

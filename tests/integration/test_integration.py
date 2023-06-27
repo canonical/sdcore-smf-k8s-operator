@@ -15,6 +15,7 @@ METADATA = yaml.safe_load(Path("./metadata.yaml").read_text())
 APP_NAME = METADATA["name"]
 NRF_APP_NAME = "sdcore-nrf"
 DATABASE_APP_NAME = "mongodb-k8s"
+TLS_PROVIDER_APP_NAME = "self-signed-certificates"
 
 
 async def _deploy_database(ops_test):
@@ -37,6 +38,15 @@ async def _deploy_nrf(ops_test):
     )
 
 
+async def _deploy_tls_provider(ops_test):
+    """Deploy a NRF."""
+    await ops_test.model.deploy(
+        TLS_PROVIDER_APP_NAME,
+        application_name=TLS_PROVIDER_APP_NAME,
+        channel="edge",
+    )
+
+
 @pytest.fixture(scope="module")
 @pytest.mark.abort_on_fail
 async def build_and_deploy(ops_test):
@@ -53,6 +63,7 @@ async def build_and_deploy(ops_test):
     )
     await _deploy_database(ops_test)
     await _deploy_nrf(ops_test)
+    await _deploy_tls_provider(ops_test)
 
 
 @pytest.mark.abort_on_fail
@@ -79,6 +90,7 @@ async def test_relate_and_wait_for_active_status(
         relation1=f"{APP_NAME}:database", relation2=f"{DATABASE_APP_NAME}"
     )
     await ops_test.model.add_relation(relation1=APP_NAME, relation2=NRF_APP_NAME)
+    await ops_test.model.add_relation(relation1=APP_NAME, relation2=TLS_PROVIDER_APP_NAME)
     await ops_test.model.wait_for_idle(
         apps=[APP_NAME],
         status="active",

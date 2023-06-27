@@ -12,6 +12,8 @@ containers:
     mounts:
       - storage: config
         location: /etc/smf
+      - storage: certs
+        location: /support/TLS
 
 resources:
   smf-image:
@@ -21,6 +23,9 @@ resources:
 
 storage:
   config:
+    type: filesystem
+    minimum-size: 1M
+  certs:
     type: filesystem
     minimum-size: 1M
 
@@ -33,3 +38,5 @@ requires:
     interface: mongodb_client
   fiveg_nrf:
     interface: fiveg_nrf
+  certificates:
+    interface: tls-certificates
