@@ -12,10 +12,8 @@ on:
 
 jobs:
   check-libraries:
-    uses: canonical/charming-actions/check-libraries@2.3.0
-    with:
-      credentials: "${{ secrets.CHARMHUB_TOKEN }}"
-      github-token: "${{ secrets.GITHUB_TOKEN }}"
+    uses: canonical/sdcore-github-workflows/.github/workflows/check-libraries.yaml@main
+    secrets: inherit
 
   lint-report:
     uses: canonical/sdcore-github-workflows/.github/workflows/lint-report.yaml@main
