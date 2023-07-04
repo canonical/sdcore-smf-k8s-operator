@@ -7,8 +7,16 @@ on:
   push:
     branches:
       - main
+  schedule:
+    - cron: "0 6 * * 0"
 
 jobs:
+  check-libraries:
+    uses: canonical/charming-actions/check-libraries@2.3.0
+    with:
+      credentials: "${{ secrets.CHARMHUB_TOKEN }}"
+      github-token: "${{ secrets.GITHUB_TOKEN }}"
+
   lint-report:
     uses: canonical/sdcore-github-workflows/.github/workflows/lint-report.yaml@main
 
