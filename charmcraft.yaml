@@ -9,6 +9,11 @@ bases:
 
 parts:
   charm:
+    build-packages:
+      - cargo
+      - rustc
     charm-binary-python-packages:
-    - cryptography
-    - jsonschema
+      - cryptography
+      - jsonschema
+      - pip
+      - setuptools
