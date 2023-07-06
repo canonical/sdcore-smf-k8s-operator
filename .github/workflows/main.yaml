@@ -7,8 +7,14 @@ on:
   push:
     branches:
       - main
+  schedule:
+    - cron: "0 8 * * 4"
 
 jobs:
+  check-libraries:
+    uses: canonical/sdcore-github-workflows/.github/workflows/check-libraries.yaml@main
+    secrets: inherit
+
   lint-report:
     uses: canonical/sdcore-github-workflows/.github/workflows/lint-report.yaml@main
 
