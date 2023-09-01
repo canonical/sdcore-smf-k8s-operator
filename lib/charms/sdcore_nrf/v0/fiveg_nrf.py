@@ -97,7 +97,7 @@ import logging
 from typing import Optional
 
 from interface_tester.schema_base import DataBagSchema  # type: ignore[import]
-from ops.charm import CharmBase, CharmEvents, RelationChangedEvent
+from ops.charm import CharmBase, CharmEvents, RelationBrokenEvent, RelationChangedEvent
 from ops.framework import EventBase, EventSource, Handle, Object
 from ops.model import Relation
 from pydantic import AnyHttpUrl, BaseModel, Field, ValidationError
@@ -110,7 +110,7 @@ LIBAPI = 0
 
 # Increment this PATCH version before using `charmcraft publish-lib` or reset
 # to 0 if you are raising the major API version
-LIBPATCH = 5
+LIBPATCH = 6
 
 PYDEPS = ["pydantic", "pytest-interface-tester"]
 
@@ -179,10 +179,19 @@ class NRFAvailableEvent(EventBase):
         self.url = snapshot["url"]
 
 
+class NRFBrokenEvent(EventBase):
+    """Charm event emitted when a NRF goes down."""
+
+    def __init__(self, handle: Handle):
+        """Init."""
+        super().__init__(handle)
+
+
 class NRFRequirerCharmEvents(CharmEvents):
     """List of events that the NRF requirer charm can leverage."""
 
     nrf_available = EventSource(NRFAvailableEvent)
+    nrf_broken = EventSource(NRFBrokenEvent)
 
 
 class NRFRequires(Object):
@@ -196,6 +205,7 @@ class NRFRequires(Object):
         self.charm = charm
         self.relation_name = relation_name
         self.framework.observe(charm.on[relation_name].relation_changed, self._on_relation_changed)
+        self.framework.observe(charm.on[relation_name].relation_broken, self._on_relation_broken)
 
     def _on_relation_changed(self, event: RelationChangedEvent) -> None:
         """Handler triggered on relation changed event.
@@ -208,6 +218,14 @@ class NRFRequires(Object):
         """
         if remote_app_relation_data := self._get_remote_app_relation_data(event.relation):
             self.on.nrf_available.emit(url=remote_app_relation_data["url"])
+
+    def _on_relation_broken(self, event: RelationBrokenEvent) -> None:
+        """Handler triggered on the NRF relation broken event.
+
+        Args:
+            event (RelationBrokenEvent): Juju event.
+        """
+        self.on.nrf_broken.emit()
 
     @property
     def nrf_url(self) -> Optional[str]:
@@ -224,7 +242,7 @@ class NRFRequires(Object):
         """Get relation data for the remote application.
 
         Args:
-            Relation: Juju relation object (optional).
+            relation: Juju relation object (optional).
 
         Returns:
             dict: Relation data for the remote application.

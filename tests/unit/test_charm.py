@@ -163,6 +163,29 @@ class TestCharm(unittest.TestCase):
             BlockedStatus("Waiting for `fiveg_nrf` relation to be created"),
         )
 
+    @patch("ops.model.Container.pull", new=Mock)
+    @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.nrf_url")
+    @patch("ops.model.Container.push", new=Mock)
+    @patch("charm.check_output")
+    @patch("ops.model.Container.exists")
+    def test_given_smf_charm_in_active_status_when_nrf_relation_breaks_then_status_is_blocked(
+        self, patch_exists, patch_check_output, patch_nrf_url
+    ):
+        self._database_is_available()
+        nrf_relation_id = self._create_nrf_relation()
+        self.harness.set_can_connect(container=self.container_name, val=True)
+        patch_exists.return_value = True
+        patch_check_output.return_value = b"1.1.1.1"
+        patch_nrf_url.return_value = "http://nrf.com:8080"
+        self.harness.container_pebble_ready("smf")
+
+        self.harness.remove_relation(nrf_relation_id)
+
+        self.assertEqual(
+            self.harness.model.unit.status,
+            BlockedStatus("Waiting for fiveg_nrf relation"),
+        )
+
     def test_given_container_cant_connect_when_configure_sdcore_smf_is_called_is_called_then_status_is_waiting(  # noqa: E501
         self,
     ):
