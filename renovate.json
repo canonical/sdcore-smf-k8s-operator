@@ -7,5 +7,12 @@
     "fileMatch": [
       "^tox.ini$"
     ]
-  }
+  },
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true
+    }
+  ],
+  "platformAutomerge": true
 }
