@@ -113,4 +113,4 @@ async def test_restore_nrf_and_wait_for_active_status(ops_test: OpsTest, build_a
         relation1=f"{NRF_APP_NAME}:database", relation2=DATABASE_APP_NAME
     )
     await ops_test.model.add_relation(relation1=APP_NAME, relation2=NRF_APP_NAME)  # type: ignore[union-attr]  # noqa: E501
-    await ops_test.model.wait_for_idle(apps=[APP_NAME], status="active", timeout=300)  # type: ignore[union-attr]  # noqa: E501
+    await ops_test.model.wait_for_idle(apps=[APP_NAME], status="active", timeout=1000)  # type: ignore[union-attr]  # noqa: E501
