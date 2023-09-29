@@ -118,18 +118,27 @@ class SMFOperatorCharm(CharmBase):
             return
         self._write_ue_config_file()
 
-    def _configure_sdcore_smf(self, event: EventBase) -> None:  # noqa C901
+    def _missing_mandatory_relations(self) -> str:
+        """Returns whether a mandatory Juju relation is missing.
+
+        Returns:
+            str: Missing mandatory relation.
+        """
+        for relation in ["database", "fiveg_nrf", "certificates"]:
+            if not self._relation_created(relation):
+                return relation
+
+    def _configure_sdcore_smf(self, event: EventBase) -> None:
         """Adds pebble layer and manages Juju unit status.
 
         Args:
             event: Juju event
         """
-        for relation in ["database", "fiveg_nrf", "certificates"]:
-            if not self._relation_created(relation):
-                self.unit.status = BlockedStatus(
-                    f"Waiting for `{relation}` relation to be created"
-                )
-                return
+        if missing_relation := self._missing_mandatory_relations():
+            self.unit.status = BlockedStatus(
+                f"Waiting for `{missing_relation}` relation to be created"
+            )
+            return
         if not self._container.can_connect():
             self.unit.status = WaitingStatus("Waiting for container to be ready")
             return
