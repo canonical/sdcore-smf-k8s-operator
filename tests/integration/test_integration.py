@@ -40,7 +40,7 @@ async def _deploy_nrf(ops_test: OpsTest):
 
 
 async def _deploy_tls_provider(ops_test: OpsTest):
-    """Deploy a NRF."""
+    """Deploy a TLS provider."""
     await ops_test.model.deploy(  # type: ignore[union-attr]
         TLS_PROVIDER_APP_NAME,
         application_name=TLS_PROVIDER_APP_NAME,
