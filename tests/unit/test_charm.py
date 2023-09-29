@@ -328,7 +328,7 @@ class TestCharm(unittest.TestCase):
     @patch("charm.check_output")
     @patch("ops.model.Container.push")
     @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.nrf_url", new_callable=PropertyMock)
-    def test_given_certificate_is_not_stored_when_configure_sdcore_smff_then_status_is_waiting(  # noqa: E501
+    def test_given_certificate_is_not_stored_when_configure_sdcore_smf_then_status_is_waiting(  # noqa: E501
         self,
         patch_nrf_url,
         patch_push,

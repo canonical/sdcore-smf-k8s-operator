@@ -118,7 +118,7 @@ class SMFOperatorCharm(CharmBase):
             return
         self._write_ue_config_file()
 
-    def _missing_mandatory_relations(self) -> str:
+    def _missing_mandatory_relations(self) -> Optional[str]:
         """Returns whether a mandatory Juju relation is missing.
 
         Returns:
@@ -127,6 +127,7 @@ class SMFOperatorCharm(CharmBase):
         for relation in ["database", "fiveg_nrf", "certificates"]:
             if not self._relation_created(relation):
                 return relation
+        return None
 
     def _configure_sdcore_smf(self, event: EventBase) -> None:
         """Adds pebble layer and manages Juju unit status.
