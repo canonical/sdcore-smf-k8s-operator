@@ -163,6 +163,19 @@ class TestCharm(unittest.TestCase):
             BlockedStatus("Waiting for `fiveg_nrf` relation to be created"),
         )
 
+    def test_given_certificates_relation_not_created_when_configure_sdcore_smf_is_called_then_status_is_blocked(  # noqa: E501
+        self,
+    ):
+        self._create_database_relation()
+        self._create_nrf_relation()
+
+        self.harness.charm._configure_sdcore_smf(event=Mock())
+
+        self.assertEqual(
+            self.harness.model.unit.status,
+            BlockedStatus("Waiting for `certificates` relation to be created"),
+        )
+
     @patch("ops.model.Container.pull", new=Mock)
     @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.nrf_url")
     @patch("ops.model.Container.push", new=Mock)
@@ -191,6 +204,9 @@ class TestCharm(unittest.TestCase):
     ):
         self._create_database_relation()
         self._create_nrf_relation()
+        self.harness.add_relation(
+            relation_name="certificates", remote_app="tls-certificates-operator"
+        )
         self.harness.set_can_connect(container=self.container_name, val=False)
 
         self.harness.charm._configure_sdcore_smf(event=Mock())
@@ -204,6 +220,9 @@ class TestCharm(unittest.TestCase):
     ):
         self._create_database_relation()
         self._create_nrf_relation()
+        self.harness.add_relation(
+            relation_name="certificates", remote_app="tls-certificates-operator"
+        )
         self.harness.set_can_connect(container=self.container_name, val=True)
 
         self.harness.charm._configure_sdcore_smf(event=Mock())
@@ -218,6 +237,9 @@ class TestCharm(unittest.TestCase):
     ):
         self._database_is_available()
         self._create_nrf_relation()
+        self.harness.add_relation(
+            relation_name="certificates", remote_app="tls-certificates-operator"
+        )
         self.harness.set_can_connect(container=self.container_name, val=True)
 
         self.harness.charm._configure_sdcore_smf(event=Mock())
@@ -238,6 +260,9 @@ class TestCharm(unittest.TestCase):
     ):
         self._database_is_available()
         self._create_nrf_relation()
+        self.harness.add_relation(
+            relation_name="certificates", remote_app="tls-certificates-operator"
+        )
         patch_check_output.return_value = b"1.1.1.1"
         self.harness.set_can_connect(container=self.container_name, val=True)
         patch_exists.side_effect = [True, False]
@@ -254,38 +279,22 @@ class TestCharm(unittest.TestCase):
 
     @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.nrf_url")
     @patch("ops.model.Container.exists")
+    @patch("ops.model.Container.push")
     def test_given_storage_is_not_attached_when_configure_sdcore_smf_is_called_then_status_is_waiting(  # noqa: E501
-        self, patch_exists, patch_nrf_url
+        self, patch_push, patch_exists, patch_nrf_url
     ):
         self._database_is_available()
         self._create_nrf_relation()
+        self.harness.add_relation(
+            relation_name="certificates", remote_app="tls-certificates-operator"
+        )
         self.harness.set_can_connect(container=self.container_name, val=True)
-        patch_exists.return_value = [False]
+        patch_exists.side_effect = [False, False]
         patch_nrf_url.return_value = "http://nrf.com:8080"
-
-    @patch("ops.model.Container.pull", new=Mock)
-    @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.nrf_url")
-    @patch("ops.model.Container.push", new=Mock)
-    @patch("charm.check_output")
-    @patch("ops.model.Container.exists")
-    def test_given_config_files_and_relations_are_created_when_configure_sdcore_smf_is_called_then_status_is_active(  # noqa: E501
-        self,
-        patch_exists,
-        patch_check_output,
-        patch_nrf_url,
-    ):
-        self._database_is_available()
-        self._create_nrf_relation()
-        self.harness.set_can_connect(container=self.container_name, val=True)
-        patch_exists.return_value = True
-        patch_check_output.return_value = b"1.1.1.1"
-        patch_nrf_url.return_value = "http://nrf.com:8080"
-
         self.harness.charm._configure_sdcore_smf(event=Mock())
-
         self.assertEqual(
             self.harness.model.unit.status,
-            ActiveStatus(),
+            WaitingStatus("Waiting for storage to be attached"),
         )
 
     @patch("ops.model.Container.pull", new=Mock)
@@ -301,7 +310,11 @@ class TestCharm(unittest.TestCase):
     ):
         self._database_is_available()
         self._create_nrf_relation()
-        patch_exists.side_effect = [True, True, True]
+        self.harness.add_relation(
+            relation_name="certificates", remote_app="tls-certificates-operator"
+        )
+        self.harness.charm._certificate_is_stored = Mock(return_value=True)
+        patch_exists.return_value = True
         patch_check_output.return_value = b""
         patch_nrf_url.return_value = "http://nrf.com:8080"
 
@@ -310,6 +323,62 @@ class TestCharm(unittest.TestCase):
         self.assertEqual(
             self.harness.model.unit.status,
             WaitingStatus("Waiting for pod IP address to be available"),
+        )
+
+    @patch("charm.check_output")
+    @patch("ops.model.Container.push")
+    @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.nrf_url", new_callable=PropertyMock)
+    def test_given_certificate_is_not_stored_when_configure_sdcore_smf_then_status_is_waiting(  # noqa: E501
+        self,
+        patch_nrf_url,
+        patch_push,
+        patch_check_output,
+    ):
+        self.harness.set_can_connect(container=self.container_name, val=True)
+        patch_nrf_url.return_value = "http://nrf.com:8080"
+        self._database_is_available()
+        self._create_nrf_relation()
+        self.harness.add_relation(
+            relation_name="certificates", remote_app="tls-certificates-operator"
+        )
+        self.harness.charm._storage_is_attached = Mock(return_value=True)
+        self.harness.charm._ue_config_file_is_written = Mock(return_value=True)
+        self.harness.charm._certificate_is_stored = Mock(return_value=False)
+        patch_check_output.return_value = b"1.1.1.1"
+
+        self.harness.charm._configure_sdcore_smf(event=Mock())
+
+        self.assertEqual(
+            self.harness.model.unit.status, WaitingStatus("Waiting for certificates to be stored")
+        )
+
+    @patch("ops.model.Container.pull", new=Mock)
+    @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.nrf_url")
+    @patch("ops.model.Container.push", new=Mock)
+    @patch("charm.check_output")
+    @patch("ops.model.Container.exists")
+    def test_given_config_files_and_relations_are_created_when_configure_sdcore_smf_is_called_then_status_is_active(  # noqa: E501
+        self,
+        patch_exists,
+        patch_check_output,
+        patch_nrf_url,
+    ):
+        self._database_is_available()
+        self._create_nrf_relation()
+        self.harness.add_relation(
+            relation_name="certificates", remote_app="tls-certificates-operator"
+        )
+        self.harness.charm._certificate_is_stored = Mock(return_value=True)
+        self.harness.set_can_connect(container=self.container_name, val=True)
+        patch_exists.return_value = True
+        patch_check_output.return_value = b"1.1.1.1"
+        patch_nrf_url.return_value = "http://nrf.com:8080"
+
+        self.harness.charm._configure_sdcore_smf(event=Mock())
+
+        self.assertEqual(
+            self.harness.model.unit.status,
+            ActiveStatus(),
         )
 
     @patch("ops.model.Container.pull", new=Mock)
@@ -328,8 +397,12 @@ class TestCharm(unittest.TestCase):
         patch_check_output.return_value = pod_ip.encode()
         self._database_is_available()
         self._create_nrf_relation()
+        self.harness.add_relation(
+            relation_name="certificates", remote_app="tls-certificates-operator"
+        )
+        self.harness.charm._certificate_is_stored = Mock(return_value=True)
         self.harness.set_can_connect(container="smf", val=True)
-        patch_exists.side_effect = [True, True, False, True]
+        patch_exists.side_effect = [True, True, True, False, True]
         patch_nrf_url.return_value = "http://nrf.com:8080"
 
         self.harness.charm._configure_sdcore_smf(event=Mock())
@@ -360,6 +433,10 @@ class TestCharm(unittest.TestCase):
         patch_nrf_url.return_value = "http://nrf.com:8080"
         self._database_is_available()
         self._create_nrf_relation()
+        self.harness.add_relation(
+            relation_name="certificates", remote_app="tls-certificates-operator"
+        )
+        self.harness.charm._certificate_is_stored = Mock(return_value=True)
         self.harness.set_can_connect(container="smf", val=True)
 
         self.harness.charm._configure_sdcore_smf(event=Mock())
@@ -384,6 +461,10 @@ class TestCharm(unittest.TestCase):
         patch_pull.return_value = StringIO("super different config file content")
         self._database_is_available()
         self._create_nrf_relation()
+        self.harness.add_relation(
+            relation_name="certificates", remote_app="tls-certificates-operator"
+        )
+        self.harness.charm._certificate_is_stored = Mock(return_value=True)
         self.harness.set_can_connect(container="smf", val=True)
         patch_exists.side_effect = [True, True, False, True]
         patch_nrf_url.return_value = "http://nrf.com:8080"
@@ -408,6 +489,10 @@ class TestCharm(unittest.TestCase):
         patch_check_output.return_value = pod_ip.encode()
         self._database_is_available()
         self._create_nrf_relation()
+        self.harness.add_relation(
+            relation_name="certificates", remote_app="tls-certificates-operator"
+        )
+        self.harness.charm._certificate_is_stored = Mock(return_value=True)
         self.harness.set_can_connect(container=self.container_name, val=True)
         patch_nrf_url.return_value = "http://nrf:8000"
         patch_exists.return_value = True

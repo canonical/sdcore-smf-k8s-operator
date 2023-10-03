@@ -20,15 +20,11 @@ Charmed Operator for the SD-Core Session Management Function (SMF).
 juju deploy mongodb-k8s --channel 5/edge --trust
 juju deploy sdcore-smf --channel edge --trust
 juju deploy sdcore-nrf --channel edge --trust
+juju deploy self-signed-certificates --channel=beta
 juju integrate sdcore-smf:default-database mongodb-k8s
 juju integrate sdcore-smf:smf-database mongodb-k8s
+juju integrate sdcore-nrf:certificates self-signed-certificates:certificates
 juju integrate sdcore-smf:fiveg_nrf sdcore-nrf
-```
-
-### Optional
-
-```bash
-juju deploy self-signed-certificates --channel=edge
 juju integrate sdcore-smf:certificates self-signed-certificates:certificates
 ```
 

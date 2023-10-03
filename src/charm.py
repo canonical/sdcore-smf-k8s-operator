@@ -118,18 +118,28 @@ class SMFOperatorCharm(CharmBase):
             return
         self._write_ue_config_file()
 
+    def _missing_mandatory_relations(self) -> Optional[str]:
+        """Returns whether a mandatory Juju relation is missing.
+
+        Returns:
+            str: Missing mandatory relation.
+        """
+        for relation in ["database", "fiveg_nrf", "certificates"]:
+            if not self._relation_created(relation):
+                return relation
+        return None
+
     def _configure_sdcore_smf(self, event: EventBase) -> None:
         """Adds pebble layer and manages Juju unit status.
 
         Args:
             event: Juju event
         """
-        for relation in ["database", "fiveg_nrf"]:
-            if not self._relation_created(relation):
-                self.unit.status = BlockedStatus(
-                    f"Waiting for `{relation}` relation to be created"
-                )
-                return
+        if missing_relation := self._missing_mandatory_relations():
+            self.unit.status = BlockedStatus(
+                f"Waiting for `{missing_relation}` relation to be created"
+            )
+            return
         if not self._container.can_connect():
             self.unit.status = WaitingStatus("Waiting for container to be ready")
             return
@@ -152,6 +162,10 @@ class SMFOperatorCharm(CharmBase):
             self.unit.status = WaitingStatus(
                 f"Waiting for `{UEROUTING_CONFIG_FILE}` config file to be pushed to workload container"  # noqa: W505, E501
             )
+            return
+        if not self._certificate_is_stored():
+            self.unit.status = WaitingStatus("Waiting for certificates to be stored")
+            event.defer()
             return
         if self._update_config_file():
             self._configure_pebble(restart=True)
@@ -182,7 +196,7 @@ class SMFOperatorCharm(CharmBase):
         self._delete_private_key()
         self._delete_csr()
         self._delete_certificate()
-        self._configure_sdcore_smf(event)
+        self.unit.status = BlockedStatus("Waiting for certificate relation")
 
     def _on_certificates_relation_joined(self, event: EventBase) -> None:
         """Generates CSR and requests new certificate."""
@@ -326,7 +340,7 @@ class SMFOperatorCharm(CharmBase):
             smf_sbi_port=SMF_SBI_PORT,
             nrf_url=self._nrf_requires.nrf_url,
             pod_ip=_get_pod_ip(),  # type: ignore[arg-type]
-            scheme="https" if self._certificate_is_stored() else "http",
+            scheme="https",
             tls_key_path=f"{CERTS_DIR_PATH}/{PRIVATE_KEY_NAME}",
             tls_certificate_path=f"{CERTS_DIR_PATH}/{CERTIFICATE_NAME}",
         )
