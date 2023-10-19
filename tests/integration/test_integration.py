@@ -142,7 +142,5 @@ async def test_restore_tls_and_wait_for_active_status(ops_test: OpsTest, build_a
         channel="beta",
         trust=True,
     )
-    await ops_test.model.integrate(
-        relation1=APP_NAME, relation2=TLS_PROVIDER_APP_NAME
-    )
+    await ops_test.model.integrate(relation1=APP_NAME, relation2=TLS_PROVIDER_APP_NAME)
     await ops_test.model.wait_for_idle(apps=[APP_NAME], status="active", timeout=1000)
