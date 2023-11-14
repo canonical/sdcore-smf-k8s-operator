@@ -212,7 +212,9 @@ class SMFOperatorCharm(CharmBase):
         if not self._private_key_is_stored():
             event.defer()
             return
-        self._request_new_certificate()
+        if not self._certificate_is_stored():
+            self._request_new_certificate()
+            return
 
     def _on_certificate_available(self, event: CertificateAvailableEvent) -> None:
         """Pushes certificate to workload and configures workload."""
