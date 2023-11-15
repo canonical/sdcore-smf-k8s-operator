@@ -562,7 +562,7 @@ class TestCharm(unittest.TestCase):
         csr = b"whatever csr content"
         patch_generate_csr.return_value = csr
         patch_pull.return_value = StringIO("private key content")
-        patch_exists.return_value = True
+        patch_exists.side_effect = [True, False]
         self.harness.set_can_connect(container="smf", val=True)
 
         self.harness.charm._on_certificates_relation_joined(event=Mock)
@@ -576,7 +576,7 @@ class TestCharm(unittest.TestCase):
     @patch("charm.generate_csr")
     @patch("ops.model.Container.pull")
     @patch("ops.model.Container.exists")
-    def test_given_private_key_exists_when_on_certificates_relation_joined_then_cert_is_requested(
+    def test_given_private_key_exists_and_cert_not_yet_requested_when_on_certificates_relation_joined_then_cert_is_requested(  # noqa: E501
         self,
         patch_exists,
         patch_pull,
@@ -586,12 +586,32 @@ class TestCharm(unittest.TestCase):
         csr = b"whatever csr content"
         patch_generate_csr.return_value = csr
         patch_pull.return_value = StringIO("private key content")
-        patch_exists.return_value = True
+        patch_exists.side_effect = [True, False]
         self.harness.set_can_connect(container="smf", val=True)
 
         self.harness.charm._on_certificates_relation_joined(event=Mock)
 
         patch_request_certificate_creation.assert_called_with(certificate_signing_request=csr)
+
+    @patch(
+        "charms.tls_certificates_interface.v2.tls_certificates.TLSCertificatesRequiresV2.request_certificate_creation",  # noqa: E501
+    )
+    @patch("ops.model.Container.push", new=Mock)
+    @patch("ops.model.Container.pull")
+    @patch("ops.model.Container.exists")
+    def test_given_cert_already_stored_when_on_certificates_relation_joined_then_cert_is_not_requested(  # noqa: E501
+        self,
+        patch_exists,
+        patch_pull,
+        patch_request_certificate_creation,
+    ):
+        patch_pull.return_value = StringIO("private key content")
+        patch_exists.return_value = True
+        self.harness.set_can_connect(container="smf", val=True)
+
+        self.harness.charm._on_certificates_relation_joined(event=Mock)
+
+        patch_request_certificate_creation.assert_not_called
 
     @patch("ops.model.Container.pull")
     @patch("ops.model.Container.exists")
