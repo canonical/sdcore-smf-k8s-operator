@@ -88,6 +88,7 @@ class SMFOperatorCharm(CharmBase):
         self.framework.observe(self.on.install, self._on_install)
         self.framework.observe(self.on.smf_pebble_ready, self._configure_sdcore_smf)
         self.framework.observe(self.on.database_relation_joined, self._configure_sdcore_smf)
+        self.framework.observe(self.on.database_relation_broken, self._on_database_relation_broken)
         self.framework.observe(self._database.on.database_created, self._configure_sdcore_smf)
         self.framework.observe(self.on.fiveg_nrf_relation_joined, self._configure_sdcore_smf)
         self.framework.observe(self._nrf_requires.on.nrf_available, self._configure_sdcore_smf)
@@ -186,6 +187,14 @@ class SMFOperatorCharm(CharmBase):
             event (NRFBrokenEvent): Juju event
         """
         self.unit.status = BlockedStatus("Waiting for fiveg_nrf relation")
+
+    def _on_database_relation_broken(self, event: EventBase) -> None:
+        """Event handler for database relation broken.
+
+        Args:
+            event: Juju event
+        """
+        self.unit.status = BlockedStatus("Waiting for database relation")
 
     def _on_certificates_relation_created(self, event: EventBase) -> None:
         """Generates Private key."""

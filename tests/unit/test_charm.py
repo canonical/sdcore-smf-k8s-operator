@@ -82,7 +82,7 @@ class TestCharm(unittest.TestCase):
         self.harness.add_relation_unit(relation_id=relation_id, remote_unit_name="nrf-operator/0")
         return relation_id
 
-    def _database_is_available(self) -> str:
+    def _create_database_relation_and_populate_data(self) -> int:
         database_url = "http://6.5.6.5"
         database_username = "rock"
         database_password = "paper"
@@ -96,7 +96,7 @@ class TestCharm(unittest.TestCase):
                 "uris": "".join([database_url]),
             },
         )
-        return database_url
+        return database_relation_id
 
     def test_given_container_cant_connect_when_on_install_then_status_is_waiting(
         self,
@@ -184,7 +184,7 @@ class TestCharm(unittest.TestCase):
     def test_given_smf_charm_in_active_status_when_nrf_relation_breaks_then_status_is_blocked(
         self, patch_exists, patch_check_output, patch_nrf_url
     ):
-        self._database_is_available()
+        self._create_database_relation_and_populate_data()
         nrf_relation_id = self._create_nrf_relation()
         self.harness.set_can_connect(container=self.container_name, val=True)
         patch_exists.return_value = True
@@ -197,6 +197,29 @@ class TestCharm(unittest.TestCase):
         self.assertEqual(
             self.harness.model.unit.status,
             BlockedStatus("Waiting for fiveg_nrf relation"),
+        )
+
+    @patch("ops.model.Container.pull", new=Mock)
+    @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.nrf_url")
+    @patch("ops.model.Container.push", new=Mock)
+    @patch("charm.check_output")
+    @patch("ops.model.Container.exists")
+    def test_given_smf_charm_in_active_status_when_database_relation_breaks_then_status_is_blocked(
+        self, patch_exists, patch_check_output, patch_nrf_url
+    ):
+        database_relation_id = self._create_database_relation_and_populate_data()
+        self._create_nrf_relation()
+        self.harness.set_can_connect(container=self.container_name, val=True)
+        patch_exists.return_value = True
+        patch_check_output.return_value = b"1.1.1.1"
+        patch_nrf_url.return_value = "http://nrf.com:8080"
+        self.harness.container_pebble_ready("smf")
+
+        self.harness.remove_relation(database_relation_id)
+
+        self.assertEqual(
+            self.harness.model.unit.status,
+            BlockedStatus("Waiting for database relation"),
         )
 
     def test_given_container_cant_connect_when_configure_sdcore_smf_is_called_is_called_then_status_is_waiting(  # noqa: E501
@@ -235,7 +258,7 @@ class TestCharm(unittest.TestCase):
     def test_given_nrf_is_not_available_when_configure_sdcore_smf_is_called_then_status_is_waiting(  # noqa: E501
         self,
     ):
-        self._database_is_available()
+        self._create_database_relation_and_populate_data()
         self._create_nrf_relation()
         self.harness.add_relation(
             relation_name="certificates", remote_app="tls-certificates-operator"
@@ -258,7 +281,7 @@ class TestCharm(unittest.TestCase):
         patch_nrf_url,
         patch_check_output,
     ):
-        self._database_is_available()
+        self._create_database_relation_and_populate_data()
         self._create_nrf_relation()
         self.harness.add_relation(
             relation_name="certificates", remote_app="tls-certificates-operator"
@@ -283,7 +306,7 @@ class TestCharm(unittest.TestCase):
     def test_given_storage_is_not_attached_when_configure_sdcore_smf_is_called_then_status_is_waiting(  # noqa: E501
         self, patch_push, patch_exists, patch_nrf_url
     ):
-        self._database_is_available()
+        self._create_database_relation_and_populate_data()
         self._create_nrf_relation()
         self.harness.add_relation(
             relation_name="certificates", remote_app="tls-certificates-operator"
@@ -308,7 +331,7 @@ class TestCharm(unittest.TestCase):
         patch_check_output,
         patch_nrf_url,
     ):
-        self._database_is_available()
+        self._create_database_relation_and_populate_data()
         self._create_nrf_relation()
         self.harness.add_relation(
             relation_name="certificates", remote_app="tls-certificates-operator"
@@ -336,7 +359,7 @@ class TestCharm(unittest.TestCase):
     ):
         self.harness.set_can_connect(container=self.container_name, val=True)
         patch_nrf_url.return_value = "http://nrf.com:8080"
-        self._database_is_available()
+        self._create_database_relation_and_populate_data()
         self._create_nrf_relation()
         self.harness.add_relation(
             relation_name="certificates", remote_app="tls-certificates-operator"
@@ -363,7 +386,7 @@ class TestCharm(unittest.TestCase):
         patch_check_output,
         patch_nrf_url,
     ):
-        self._database_is_available()
+        self._create_database_relation_and_populate_data()
         self._create_nrf_relation()
         self.harness.add_relation(
             relation_name="certificates", remote_app="tls-certificates-operator"
@@ -395,7 +418,7 @@ class TestCharm(unittest.TestCase):
     ):
         pod_ip = "1.1.1.1"
         patch_check_output.return_value = pod_ip.encode()
-        self._database_is_available()
+        self._create_database_relation_and_populate_data()
         self._create_nrf_relation()
         self.harness.add_relation(
             relation_name="certificates", remote_app="tls-certificates-operator"
@@ -431,7 +454,7 @@ class TestCharm(unittest.TestCase):
         patch_pull.return_value = StringIO(self._read_file("tests/unit/expected_smfcfg.yaml"))
         patch_exists.side_effect = [True, False]
         patch_nrf_url.return_value = "http://nrf.com:8080"
-        self._database_is_available()
+        self._create_database_relation_and_populate_data()
         self._create_nrf_relation()
         self.harness.add_relation(
             relation_name="certificates", remote_app="tls-certificates-operator"
@@ -459,7 +482,7 @@ class TestCharm(unittest.TestCase):
         pod_ip = "1.1.1.1"
         patch_check_output.return_value = pod_ip.encode()
         patch_pull.return_value = StringIO("super different config file content")
-        self._database_is_available()
+        self._create_database_relation_and_populate_data()
         self._create_nrf_relation()
         self.harness.add_relation(
             relation_name="certificates", remote_app="tls-certificates-operator"
@@ -487,7 +510,7 @@ class TestCharm(unittest.TestCase):
     ):
         pod_ip = "1.1.1.1"
         patch_check_output.return_value = pod_ip.encode()
-        self._database_is_available()
+        self._create_database_relation_and_populate_data()
         self._create_nrf_relation()
         self.harness.add_relation(
             relation_name="certificates", remote_app="tls-certificates-operator"
