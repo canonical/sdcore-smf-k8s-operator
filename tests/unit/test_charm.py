@@ -569,7 +569,9 @@ class TestCharm(unittest.TestCase):
 
         with self.assertRaises(FileNotFoundError):
             (root / "support/TLS/smf.key").read_text()
+        with self.assertRaises(FileNotFoundError):
             (root / "support/TLS/smf.pem").read_text()
+        with self.assertRaises(FileNotFoundError):
             (root / "support/TLS/smf.csr").read_text()
 
     @patch(
