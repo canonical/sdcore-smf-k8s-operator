@@ -27,10 +27,10 @@ from charms.tls_certificates_interface.v2.tls_certificates import (  # type: ign
 )
 from jinja2 import Environment, FileSystemLoader
 from lightkube.models.core_v1 import ServicePort
-from ops.charm import CharmBase, InstallEvent
+from ops import ActiveStatus, BlockedStatus, StatusBase, WaitingStatus
+from ops.charm import CharmBase, CollectStatusEvent, InstallEvent, RelationBrokenEvent
 from ops.framework import EventBase
 from ops.main import main
-from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
 
 logger = logging.getLogger(__name__)
 
@@ -53,14 +53,6 @@ class SMFOperatorCharm(CharmBase):
 
     def __init__(self, *args):
         super().__init__(*args)
-        if not self.unit.is_leader():
-            # NOTE: In cases where leader status is lost before the charm is
-            # finished processing all teardown events, this prevents teardown
-            # event code from running. Luckily, for this charm, none of the
-            # teardown code is necessary to preform if we're removing the
-            # charm.
-            self.unit.status = BlockedStatus("Scaling is not implemented for this charm")
-            return
         self._container_name = self._service_name = "smf"
         self._container = self.unit.get_container(self._container_name)
         self._nrf_requires = NRFRequires(charm=self, relation_name="fiveg_nrf")
@@ -84,7 +76,12 @@ class SMFOperatorCharm(CharmBase):
             ],
         )
         self._certificates = TLSCertificatesRequiresV2(self, "certificates")
-
+        # Setting attributes to detect broken relations until
+        # https://github.com/canonical/operator/issues/940 is fixed
+        self._database_relation_breaking = False
+        self._nrf_relation_breaking = False
+        self._tls_relation_breaking = False
+        self.framework.observe(self.on.collect_unit_status, self._on_collect_unit_status)
         self.framework.observe(self.on.install, self._on_install)
         self.framework.observe(self.on.smf_pebble_ready, self._configure_sdcore_smf)
         self.framework.observe(self.on.database_relation_joined, self._configure_sdcore_smf)
@@ -109,6 +106,67 @@ class SMFOperatorCharm(CharmBase):
             self._certificates.on.certificate_expiring, self._on_certificate_expiring
         )
 
+    def _is_unit_in_non_active_status(self) -> Optional[StatusBase]:  # noqa: C901
+        """Evaluate and return the unit's current status, or None if it should be active.
+
+        Returns:
+            StatusBase: MaintenanceStatus/BlockedStatus/WaitingStatus
+            None: If none of the conditionals match
+
+        """
+        if not self.unit.is_leader():
+            # NOTE: In cases where leader status is lost before the charm is
+            # finished processing all teardown events, this prevents teardown
+            # event code from running. Luckily, for this charm, none of the
+            # teardown code is necessary to preform if we're removing the
+            # charm.
+            return BlockedStatus("Scaling is not implemented for this charm")
+
+        if not self._container.can_connect():
+            return WaitingStatus("Waiting for container to be ready")
+
+        if not self._storage_is_attached():
+            return WaitingStatus("Waiting for storage to be attached")
+
+        if not self.model.get_relation("database") or self._database_relation_breaking:
+            return BlockedStatus("Waiting for database relation")
+
+        if not self.model.get_relation("fiveg_nrf") or self._nrf_relation_breaking:
+            return BlockedStatus("Waiting for fiveg_nrf relation")
+
+        if not self.model.get_relation("certificates") or self._tls_relation_breaking:
+            return BlockedStatus("Waiting for certificates relation")
+
+        if not self._database_is_available():
+            return WaitingStatus("Waiting for database relation to be available")
+
+        if not self._nrf_is_available():
+            return WaitingStatus("Waiting for NRF relation to be available")
+
+        if not _get_pod_ip():
+            return WaitingStatus("Waiting for pod IP address to be available")
+
+        if not self._ue_config_file_is_written():
+            return WaitingStatus(
+                f"Waiting for `{UEROUTING_CONFIG_FILE}` config file to be pushed to workload container"  # noqa: W505, E501
+            )
+
+        if not self._certificate_is_stored():
+            return WaitingStatus("Waiting for certificates to be stored")
+
+        return None
+
+    def _on_collect_unit_status(self, event: CollectStatusEvent):
+        """Check the unit status and set to Unit when CollectStatusEvent is fired.
+
+        Args:
+            event: CollectStatusEvent
+        """
+        if status := self._is_unit_in_non_active_status():
+            event.add_status(status)
+        else:
+            event.add_status(ActiveStatus())
+
     def _on_install(self, event: InstallEvent) -> None:
         """Handles the install event.
 
@@ -116,25 +174,12 @@ class SMFOperatorCharm(CharmBase):
             event (InstallEvent): Juju event.
         """
         if not self._container.can_connect():
-            self.unit.status = WaitingStatus("Waiting for container to be ready")
             event.defer()
             return
         if not self._storage_is_attached():
-            self.unit.status = WaitingStatus("Waiting for storage to be attached")
             event.defer()
             return
         self._write_ue_config_file()
-
-    def _missing_mandatory_relations(self) -> Optional[str]:
-        """Returns whether a mandatory Juju relation is missing.
-
-        Returns:
-            str: Missing mandatory relation.
-        """
-        for relation in ["database", "fiveg_nrf", "certificates"]:
-            if not self._relation_created(relation):
-                return relation
-        return None
 
     def _configure_sdcore_smf(self, event: EventBase) -> None:
         """Adds pebble layer and manages Juju unit status.
@@ -142,59 +187,30 @@ class SMFOperatorCharm(CharmBase):
         Args:
             event: Juju event
         """
-        if missing_relation := self._missing_mandatory_relations():
-            self.unit.status = BlockedStatus(
-                f"Waiting for `{missing_relation}` relation to be created"
-            )
-            return
-        if not self._container.can_connect():
-            self.unit.status = WaitingStatus("Waiting for container to be ready")
-            return
-        if not self._database_is_available():
-            self.unit.status = WaitingStatus("Waiting for `database` relation to be available")
-            return
-        if not self._nrf_is_available():
-            self.unit.status = WaitingStatus("Waiting for NRF relation to be available")
-            return
-        if not self._storage_is_attached():
-            self.unit.status = WaitingStatus("Waiting for storage to be attached")
-            event.defer()
-            return
-        if not _get_pod_ip():
-            self.unit.status = WaitingStatus("Waiting for pod IP address to be available")
-            event.defer()
-            return
-        if not self._ue_config_file_is_written():
-            event.defer()
-            self.unit.status = WaitingStatus(
-                f"Waiting for `{UEROUTING_CONFIG_FILE}` config file to be pushed to workload container"  # noqa: W505, E501
-            )
-            return
-        if not self._certificate_is_stored():
-            self.unit.status = WaitingStatus("Waiting for certificates to be stored")
+        if self._is_unit_in_non_active_status():
+            # Unit Status is in Maintanence or Blocked or Waiting status
             event.defer()
             return
         if self._update_config_file():
             self._configure_pebble(restart=True)
         else:
             self._configure_pebble()
-        self.unit.status = ActiveStatus()
 
-    def _on_nrf_broken(self, event: EventBase) -> None:
+    def _on_nrf_broken(self, event: RelationBrokenEvent) -> None:
         """Event handler for NRF relation broken.
 
         Args:
             event (NRFBrokenEvent): Juju event
         """
-        self.unit.status = BlockedStatus("Waiting for fiveg_nrf relation")
+        self._nrf_relation_breaking = True
 
-    def _on_database_relation_broken(self, event: EventBase) -> None:
+    def _on_database_relation_broken(self, event: RelationBrokenEvent) -> None:
         """Event handler for database relation broken.
 
         Args:
             event: Juju event
         """
-        self.unit.status = BlockedStatus("Waiting for database relation")
+        self._database_relation_breaking = True
 
     def _on_certificates_relation_created(self, event: EventBase) -> None:
         """Generates Private key."""
@@ -203,7 +219,7 @@ class SMFOperatorCharm(CharmBase):
             return
         self._generate_private_key()
 
-    def _on_certificates_relation_broken(self, event: EventBase) -> None:
+    def _on_certificates_relation_broken(self, event: RelationBrokenEvent) -> None:
         """Deletes TLS related artifacts and reconfigures workload."""
         if not self._container.can_connect():
             event.defer()
@@ -211,7 +227,7 @@ class SMFOperatorCharm(CharmBase):
         self._delete_private_key()
         self._delete_csr()
         self._delete_certificate()
-        self.unit.status = BlockedStatus("Waiting for certificate relation")
+        self._tls_relation_breaking = True
 
     def _on_certificates_relation_joined(self, event: EventBase) -> None:
         """Generates CSR and requests new certificate."""
@@ -560,7 +576,10 @@ def _get_pod_ip() -> Optional[str]:
     Returns:
         str: The pod IP.
     """
-    ip_address = check_output(["unit-get", "private-address"])
+    try:
+        ip_address = check_output(["unit-get", "private-address"])
+    except FileNotFoundError:
+        return None
     return str(IPv4Address(ip_address.decode().strip())) if ip_address else None
 
 
