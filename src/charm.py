@@ -11,9 +11,6 @@ from subprocess import check_output
 from typing import Optional
 
 from charms.data_platform_libs.v0.data_interfaces import DatabaseRequires  # type: ignore[import]
-from charms.observability_libs.v1.kubernetes_service_patch import (  # type: ignore[import]  # noqa: E501
-    KubernetesServicePatch,
-)
 from charms.prometheus_k8s.v0.prometheus_scrape import (  # type: ignore[import]  # noqa: E501
     MetricsEndpointProvider,
 )
@@ -26,11 +23,10 @@ from charms.tls_certificates_interface.v2.tls_certificates import (  # type: ign
     generate_private_key,
 )
 from jinja2 import Environment, FileSystemLoader
-from lightkube.models.core_v1 import ServicePort
 from ops.charm import CharmBase, InstallEvent
 from ops.framework import EventBase
 from ops.main import main
-from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
+from ops.model import ActiveStatus, BlockedStatus, Port, WaitingStatus
 
 logger = logging.getLogger(__name__)
 
@@ -67,13 +63,10 @@ class SMFOperatorCharm(CharmBase):
         self._database = DatabaseRequires(
             self, relation_name="database", database_name=DATABASE_NAME
         )
-        self._service_patcher = KubernetesServicePatch(
-            charm=self,
-            ports=[
-                ServicePort(name="pfcp", port=PFCP_PORT, protocol="UDP"),
-                ServicePort(name="sbi", port=SMF_SBI_PORT),
-                ServicePort(name="prometheus-exporter", port=PROMETHEUS_PORT),
-            ],
+        self.unit.set_ports(
+            PROMETHEUS_PORT,
+            SMF_SBI_PORT,
+            Port(port=PFCP_PORT, protocol="udp"),
         )
         self._metrics_endpoint = MetricsEndpointProvider(
             self,
