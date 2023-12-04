@@ -15,10 +15,6 @@ logger = logging.getLogger(__name__)
 
 
 class TestCharm(unittest.TestCase):
-    @patch(
-        "charm.KubernetesServicePatch",
-        lambda charm, ports: None,
-    )
     def setUp(self):
         self.maxDiff = None
         self.namespace = "whatever"

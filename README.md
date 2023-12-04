@@ -7,8 +7,8 @@ Charmed Operator for the SD-Core Session Management Function (SMF).
 
 ```bash
 juju deploy mongodb-k8s --channel 5/edge --trust
-juju deploy sdcore-smf --channel edge --trust
-juju deploy sdcore-nrf --channel edge --trust
+juju deploy sdcore-smf --channel edge
+juju deploy sdcore-nrf --channel edge
 juju deploy self-signed-certificates --channel=beta
 juju integrate sdcore-smf:default-database mongodb-k8s
 juju integrate sdcore-smf:smf-database mongodb-k8s
