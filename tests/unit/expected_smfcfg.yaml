@@ -20,7 +20,7 @@ configuration:
   smfName: SMF
   sbi:
     scheme: https
-    registerIPv4: sdcore-smf.whatever.svc.cluster.local
+    registerIPv4: sdcore-smf-k8s.whatever.svc.cluster.local
     bindingIPv4: 0.0.0.0
     port: 29502
     tls:

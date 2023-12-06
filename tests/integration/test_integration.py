@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 METADATA = yaml.safe_load(Path("./metadata.yaml").read_text())
 APP_NAME = METADATA["name"]
-NRF_APP_NAME = "sdcore-nrf"
+NRF_APP_NAME = "sdcore-nrf-k8s"
 DATABASE_APP_NAME = "mongodb-k8s"
 TLS_PROVIDER_APP_NAME = "self-signed-certificates"
 
