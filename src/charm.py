@@ -2,7 +2,7 @@
 # Copyright 2023 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-"""Charmed K8s operator for the 5G SMF service."""
+"""Charmed operator for the 5G SMF service for K8s."""
 
 
 import logging
@@ -44,7 +44,7 @@ CERTIFICATE_NAME = "smf.pem"
 CERTIFICATE_COMMON_NAME = "smf.sdcore"
 
 
-class SMFK8sOperatorCharm(CharmBase):
+class SMFOperatorCharm(CharmBase):
     """Charm the service."""
 
     def __init__(self, *args):
@@ -558,4 +558,4 @@ def _get_pod_ip() -> Optional[str]:
 
 
 if __name__ == "__main__":  # pragma: nocover
-    main(SMFK8sOperatorCharm)
+    main(SMFOperatorCharm)

@@ -9,7 +9,7 @@ import yaml
 from ops import testing
 from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
 
-from charm import SMFK8sOperatorCharm
+from charm import SMFOperatorCharm
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class TestCharm(unittest.TestCase):
         self.database_application_name = "mongodb-k8s"
         self.metadata = self._get_metadata()
         self.container_name = list(self.metadata["containers"].keys())[0]
-        self.harness = testing.Harness(SMFK8sOperatorCharm)
+        self.harness = testing.Harness(SMFOperatorCharm)
         self.harness.set_model_name(name=self.namespace)
         self.addCleanup(self.harness.cleanup)
         self.harness.set_leader(is_leader=True)
