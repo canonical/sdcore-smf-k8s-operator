@@ -14,7 +14,7 @@ from charms.data_platform_libs.v0.data_interfaces import DatabaseRequires  # typ
 from charms.prometheus_k8s.v0.prometheus_scrape import (  # type: ignore[import]  # noqa: E501
     MetricsEndpointProvider,
 )
-from charms.sdcore_nrf.v0.fiveg_nrf import NRFRequires  # type: ignore[import]
+from charms.sdcore_nrf_k8s.v0.fiveg_nrf import NRFRequires  # type: ignore[import]
 from charms.tls_certificates_interface.v2.tls_certificates import (  # type: ignore[import]
     CertificateAvailableEvent,
     CertificateExpiringEvent,

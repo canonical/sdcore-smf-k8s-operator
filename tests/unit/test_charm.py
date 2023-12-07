@@ -168,7 +168,7 @@ class TestCharm(unittest.TestCase):
             BlockedStatus("Waiting for `certificates` relation to be created"),
         )
 
-    @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.nrf_url")
+    @patch("charms.sdcore_nrf_k8s.v0.fiveg_nrf.NRFRequires.nrf_url")
     @patch("charm.check_output")
     def test_given_smf_charm_in_active_status_when_nrf_relation_breaks_then_status_is_blocked(
         self, patch_check_output, patch_nrf_url
@@ -196,7 +196,7 @@ class TestCharm(unittest.TestCase):
             BlockedStatus("Waiting for fiveg_nrf relation"),
         )
 
-    @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.nrf_url")
+    @patch("charms.sdcore_nrf_k8s.v0.fiveg_nrf.NRFRequires.nrf_url")
     @patch("charm.check_output")
     def test_given_smf_charm_in_active_status_when_database_relation_breaks_then_status_is_blocked(
         self, patch_check_output, patch_nrf_url
@@ -275,7 +275,7 @@ class TestCharm(unittest.TestCase):
         )
 
     @patch("charm.check_output")
-    @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.nrf_url")
+    @patch("charms.sdcore_nrf_k8s.v0.fiveg_nrf.NRFRequires.nrf_url")
     def test_given_ue_config_file_is_not_written_when_configure_sdcore_smf_is_called_then_status_is_waiting(  # noqa: E501
         self,
         patch_nrf_url,
@@ -300,7 +300,7 @@ class TestCharm(unittest.TestCase):
             ),
         )
 
-    @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.nrf_url")
+    @patch("charms.sdcore_nrf_k8s.v0.fiveg_nrf.NRFRequires.nrf_url")
     def test_given_storage_is_not_attached_when_configure_sdcore_smf_is_called_then_status_is_waiting(  # noqa: E501
         self, patch_nrf_url
     ):
@@ -317,7 +317,7 @@ class TestCharm(unittest.TestCase):
             WaitingStatus("Waiting for storage to be attached"),
         )
 
-    @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.nrf_url")
+    @patch("charms.sdcore_nrf_k8s.v0.fiveg_nrf.NRFRequires.nrf_url")
     @patch("charm.check_output")
     def test_given_ip_not_available_when_configure_then_status_is_waiting(
         self,
@@ -342,7 +342,7 @@ class TestCharm(unittest.TestCase):
         )
 
     @patch("charm.check_output")
-    @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.nrf_url", new_callable=PropertyMock)
+    @patch("charms.sdcore_nrf_k8s.v0.fiveg_nrf.NRFRequires.nrf_url", new_callable=PropertyMock)
     def test_given_certificate_is_not_stored_when_configure_sdcore_smf_then_status_is_waiting(  # noqa: E501
         self,
         patch_nrf_url,
@@ -368,7 +368,7 @@ class TestCharm(unittest.TestCase):
             self.harness.model.unit.status, WaitingStatus("Waiting for certificates to be stored")
         )
 
-    @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.nrf_url")
+    @patch("charms.sdcore_nrf_k8s.v0.fiveg_nrf.NRFRequires.nrf_url")
     @patch("charm.check_output")
     def test_given_config_files_and_relations_are_created_when_configure_sdcore_smf_is_called_then_status_is_active(  # noqa: E501
         self,
@@ -397,7 +397,7 @@ class TestCharm(unittest.TestCase):
             ActiveStatus(),
         )
 
-    @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.nrf_url", new_callable=PropertyMock)
+    @patch("charms.sdcore_nrf_k8s.v0.fiveg_nrf.NRFRequires.nrf_url", new_callable=PropertyMock)
     @patch("charm.check_output")
     def test_given_nrf_is_available_when_database_is_created_then_config_file_is_written_with_expected_content(  # noqa: E501
         self,
@@ -427,7 +427,7 @@ class TestCharm(unittest.TestCase):
             self._read_file("tests/unit/expected_smfcfg.yaml"),
         )
 
-    @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.nrf_url", new_callable=PropertyMock)
+    @patch("charms.sdcore_nrf_k8s.v0.fiveg_nrf.NRFRequires.nrf_url", new_callable=PropertyMock)
     @patch("charm.check_output")
     def test_given_config_file_exists_and_is_not_changed_when_configure_smf_then_config_file_is_not_re_written_with_same_content(  # noqa: E501
         self,
@@ -458,7 +458,7 @@ class TestCharm(unittest.TestCase):
 
         self.assertEqual((root / "etc/smf/smfcfg.yaml").stat().st_mtime, config_modification_time)
 
-    @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.nrf_url", new_callable=PropertyMock)
+    @patch("charms.sdcore_nrf_k8s.v0.fiveg_nrf.NRFRequires.nrf_url", new_callable=PropertyMock)
     @patch("charm.check_output")
     def test_given_config_file_exists_and_is_changed_when_configure_smf_then_config_file_is_updated(  # noqa: E501
         self,
@@ -489,7 +489,7 @@ class TestCharm(unittest.TestCase):
             self._read_file("tests/unit/expected_smfcfg.yaml"),
         )
 
-    @patch("charms.sdcore_nrf.v0.fiveg_nrf.NRFRequires.nrf_url")
+    @patch("charms.sdcore_nrf_k8s.v0.fiveg_nrf.NRFRequires.nrf_url")
     @patch("charm.check_output")
     def test_given_config_files_and_relations_are_created_when_configure_sdcore_smf_is_called_then_expected_plan_is_applied(  # noqa: E501
         self, patch_check_output, patch_nrf_url
