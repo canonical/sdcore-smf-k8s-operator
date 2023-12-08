@@ -1,4 +1,4 @@
-# SD-Core SMF Operator for K8s
+# SD-Core SMF Operator (k8s)
 [![CharmHub Badge](https://charmhub.io/sdcore-smf-k8s/badge.svg)](https://charmhub.io/sdcore-smf-k8s)
 
 Charmed Operator for the SD-Core Session Management Function (SMF) for K8s.
