@@ -1,20 +1,20 @@
 # SD-Core SMF Operator (k8s)
-[![CharmHub Badge](https://charmhub.io/sdcore-smf/badge.svg)](https://charmhub.io/sdcore-smf)
+[![CharmHub Badge](https://charmhub.io/sdcore-smf-k8s/badge.svg)](https://charmhub.io/sdcore-smf-k8s)
 
-Charmed Operator for the SD-Core Session Management Function (SMF).
+Charmed Operator for the SD-Core Session Management Function (SMF) for K8s.
 
 # Usage
 
 ```bash
 juju deploy mongodb-k8s --channel 5/edge --trust
-juju deploy sdcore-smf --channel edge
-juju deploy sdcore-nrf --channel edge
+juju deploy sdcore-smf-k8s --channel edge
+juju deploy sdcore-nrf-k8s --channel edge
 juju deploy self-signed-certificates --channel=beta
-juju integrate sdcore-smf:default-database mongodb-k8s
-juju integrate sdcore-smf:smf-database mongodb-k8s
-juju integrate sdcore-nrf:certificates self-signed-certificates:certificates
-juju integrate sdcore-smf:fiveg_nrf sdcore-nrf
-juju integrate sdcore-smf:certificates self-signed-certificates:certificates
+juju integrate sdcore-smf-k8s:default-database mongodb-k8s
+juju integrate sdcore-smf-k8s:smf-database mongodb-k8s
+juju integrate sdcore-nrf-k8s:certificates self-signed-certificates:certificates
+juju integrate sdcore-smf-k8s:fiveg_nrf sdcore-nrf-k8s:fiveg_nrf
+juju integrate sdcore-smf-k8s:certificates self-signed-certificates:certificates
 ```
 
 # Image
