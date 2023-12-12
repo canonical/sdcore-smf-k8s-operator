@@ -20,3 +20,4 @@ juju integrate sdcore-smf-k8s:certificates self-signed-certificates:certificates
 # Image
 
 **smf**: `ghcr.io/canonical/sdcore-smf:1.3`
+
