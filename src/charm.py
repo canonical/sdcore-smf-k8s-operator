@@ -2,7 +2,7 @@
 # Copyright 2023 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-"""Charmed operator for the 5G SMF service."""
+"""Charmed operator for the 5G SMF service for K8s."""
 
 
 import logging
@@ -11,13 +11,10 @@ from subprocess import check_output
 from typing import Optional
 
 from charms.data_platform_libs.v0.data_interfaces import DatabaseRequires  # type: ignore[import]
-from charms.observability_libs.v1.kubernetes_service_patch import (  # type: ignore[import]  # noqa: E501
-    KubernetesServicePatch,
-)
 from charms.prometheus_k8s.v0.prometheus_scrape import (  # type: ignore[import]  # noqa: E501
     MetricsEndpointProvider,
 )
-from charms.sdcore_nrf.v0.fiveg_nrf import NRFRequires  # type: ignore[import]
+from charms.sdcore_nrf_k8s.v0.fiveg_nrf import NRFRequires  # type: ignore[import]
 from charms.tls_certificates_interface.v2.tls_certificates import (  # type: ignore[import]
     CertificateAvailableEvent,
     CertificateExpiringEvent,
@@ -26,11 +23,10 @@ from charms.tls_certificates_interface.v2.tls_certificates import (  # type: ign
     generate_private_key,
 )
 from jinja2 import Environment, FileSystemLoader
-from lightkube.models.core_v1 import ServicePort
 from ops.charm import CharmBase, InstallEvent
 from ops.framework import EventBase
 from ops.main import main
-from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
+from ops.model import ActiveStatus, BlockedStatus, Port, WaitingStatus
 
 logger = logging.getLogger(__name__)
 
@@ -67,13 +63,10 @@ class SMFOperatorCharm(CharmBase):
         self._database = DatabaseRequires(
             self, relation_name="database", database_name=DATABASE_NAME
         )
-        self._service_patcher = KubernetesServicePatch(
-            charm=self,
-            ports=[
-                ServicePort(name="pfcp", port=PFCP_PORT, protocol="UDP"),
-                ServicePort(name="sbi", port=SMF_SBI_PORT),
-                ServicePort(name="prometheus-exporter", port=PROMETHEUS_PORT),
-            ],
+        self.unit.set_ports(
+            PROMETHEUS_PORT,
+            SMF_SBI_PORT,
+            Port(port=PFCP_PORT, protocol="udp"),
         )
         self._metrics_endpoint = MetricsEndpointProvider(
             self,
@@ -88,6 +81,7 @@ class SMFOperatorCharm(CharmBase):
         self.framework.observe(self.on.install, self._on_install)
         self.framework.observe(self.on.smf_pebble_ready, self._configure_sdcore_smf)
         self.framework.observe(self.on.database_relation_joined, self._configure_sdcore_smf)
+        self.framework.observe(self.on.database_relation_broken, self._on_database_relation_broken)
         self.framework.observe(self._database.on.database_created, self._configure_sdcore_smf)
         self.framework.observe(self.on.fiveg_nrf_relation_joined, self._configure_sdcore_smf)
         self.framework.observe(self._nrf_requires.on.nrf_available, self._configure_sdcore_smf)
@@ -187,6 +181,14 @@ class SMFOperatorCharm(CharmBase):
         """
         self.unit.status = BlockedStatus("Waiting for fiveg_nrf relation")
 
+    def _on_database_relation_broken(self, event: EventBase) -> None:
+        """Event handler for database relation broken.
+
+        Args:
+            event: Juju event
+        """
+        self.unit.status = BlockedStatus("Waiting for database relation")
+
     def _on_certificates_relation_created(self, event: EventBase) -> None:
         """Generates Private key."""
         if not self._container.can_connect():
@@ -212,6 +214,9 @@ class SMFOperatorCharm(CharmBase):
         if not self._private_key_is_stored():
             event.defer()
             return
+        if self._certificate_is_stored():
+            return
+
         self._request_new_certificate()
 
     def _on_certificate_available(self, event: CertificateAvailableEvent) -> None:

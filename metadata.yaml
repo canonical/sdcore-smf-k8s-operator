@@ -1,5 +1,5 @@
-name: sdcore-smf
-display-name: SD-Core 5G SMF
+name: sdcore-smf-k8s
+display-name: SD-Core 5G SMF K8s
 summary: Charmed Operator for the SD-Core Session Management Function (SMF).
 description: Charmed Operator for the SD-Core Session Management Function (SMF).
 

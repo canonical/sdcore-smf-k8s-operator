@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 METADATA = yaml.safe_load(Path("./metadata.yaml").read_text())
 APP_NAME = METADATA["name"]
-NRF_APP_NAME = "sdcore-nrf"
+NRF_APP_NAME = "sdcore-nrf-k8s"
 DATABASE_APP_NAME = "mongodb-k8s"
 TLS_PROVIDER_APP_NAME = "self-signed-certificates"
 
@@ -164,3 +164,29 @@ async def test_when_scale_app_beyond_1_then_only_one_unit_is_active(
 async def test_remove_app(ops_test: OpsTest, build_and_deploy):
     assert ops_test.model
     await ops_test.model.remove_application(APP_NAME, block_until_done=True)
+
+
+@pytest.mark.skip(
+    reason="Bug in MongoDB: https://github.com/canonical/mongodb-k8s-operator/issues/218"
+)
+@pytest.mark.abort_on_fail
+async def test_remove_database_and_wait_for_blocked_status(ops_test: OpsTest, build_and_deploy):
+    assert ops_test.model
+    await ops_test.model.remove_application(DATABASE_APP_NAME, block_until_done=True)
+    await ops_test.model.wait_for_idle(apps=[APP_NAME], status="blocked", timeout=60)
+
+
+@pytest.mark.skip(
+    reason="Bug in MongoDB: https://github.com/canonical/mongodb-k8s-operator/issues/218"
+)
+@pytest.mark.abort_on_fail
+async def test_restore_database_and_wait_for_active_status(ops_test: OpsTest, build_and_deploy):
+    assert ops_test.model
+    await ops_test.model.deploy(
+        DATABASE_APP_NAME,
+        application_name=DATABASE_APP_NAME,
+        channel="5/edge",
+        trust=True,
+    )
+    await ops_test.model.integrate(relation1=APP_NAME, relation2=DATABASE_APP_NAME)
+    await ops_test.model.wait_for_idle(apps=[APP_NAME], status="active", timeout=1000)

@@ -13,7 +13,7 @@ NRF information and another charm requiring this information.
 From a charm directory, fetch the library using `charmcraft`:
 
 ```shell
-charmcraft fetch-lib charms.sdcore_nrf.v0.fiveg_nrf
+charmcraft fetch-lib charms.sdcore_nrf_k8s_k8s.v0.fiveg_nrf
 ```
 
 Add the following libraries to the charm's `requirements.txt` file:
@@ -28,7 +28,7 @@ Example:
 from ops.charm import CharmBase
 from ops.main import main
 
-from charms.sdcore_nrf.v0.fiveg_nrf import NRFAvailableEvent, NRFRequires
+from charms.sdcore_nrf_k8s.v0.fiveg_nrf import NRFAvailableEvent, NRFRequires
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +58,7 @@ Example:
 from ops.charm import CharmBase, RelationJoinedEvent
 from ops.main import main
 
-from charms.sdcore_nrf.v0.fiveg_nrf import NRFProvides
+from charms.sdcore_nrf_k8s.v0.fiveg_nrf import NRFProvides
 
 
 class DummyFiveGNRFProviderCharm(CharmBase):
@@ -103,14 +103,14 @@ from ops.model import Relation
 from pydantic import AnyHttpUrl, BaseModel, Field, ValidationError
 
 # The unique Charmhub library identifier, never change it
-LIBID = "cd132a12c2b34243bfd2bae8d08c32d6"
+LIBID = "14746bb6f8d34accbeac27ea50ff4715"
 
 # Increment this major API version when introducing breaking changes
 LIBAPI = 0
 
 # Increment this PATCH version before using `charmcraft publish-lib` or reset
 # to 0 if you are raising the major API version
-LIBPATCH = 6
+LIBPATCH = 1
 
 PYDEPS = ["pydantic", "pytest-interface-tester"]
 
