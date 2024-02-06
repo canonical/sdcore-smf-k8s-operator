@@ -32,6 +32,7 @@ assignees: ''
 - Juju version (output from `juju --version`):
 - Cloud Environment: <!-- e.g. GKE -->
 - Kubernetes version (output from `kubectl version --short`):
+- Terraform version (output from `terraform version`):
 
 #### Additional context
 

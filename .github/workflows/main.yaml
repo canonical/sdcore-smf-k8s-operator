@@ -18,6 +18,9 @@ jobs:
   lint-report:
     uses: canonical/sdcore-github-workflows/.github/workflows/lint-report.yaml@main
 
+  terraform-check:
+    uses: canonical/sdcore-github-workflows/.github/workflows/terraform.yaml@main
+
   static-analysis:
     uses: canonical/sdcore-github-workflows/.github/workflows/static-analysis.yaml@main
 
