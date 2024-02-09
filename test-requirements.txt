@@ -9,7 +9,7 @@ mypy
 pep8-naming
 pyproject-flake8
 pytest
-pytest-asyncio==0.21.1
+pytest-asyncio==0.23.5
 pytest-operator
 types-PyYAML
 types-setuptools
