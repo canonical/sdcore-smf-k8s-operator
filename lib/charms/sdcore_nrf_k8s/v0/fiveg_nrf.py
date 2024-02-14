@@ -13,7 +13,7 @@ NRF information and another charm requiring this information.
 From a charm directory, fetch the library using `charmcraft`:
 
 ```shell
-charmcraft fetch-lib charms.sdcore_nrf_k8s_k8s.v0.fiveg_nrf
+charmcraft fetch-lib charms.sdcore_nrf_k8s.v0.fiveg_nrf
 ```
 
 Add the following libraries to the charm's `requirements.txt` file:
@@ -37,7 +37,7 @@ class DummyFiveGNRFRequirerCharm(CharmBase):
 
     def __init__(self, *args):
         super().__init__(*args)
-        self.nrf_requirer = NRFRequires(self, "fiveg-nrf")
+        self.nrf_requirer = NRFRequires(self, "fiveg_nrf")
         self.framework.observe(self.nrf_requirer.on.nrf_available, self._on_nrf_available)
 
     def _on_nrf_available(self, event: NRFAvailableEvent):
@@ -67,7 +67,7 @@ class DummyFiveGNRFProviderCharm(CharmBase):
 
     def __init__(self, *args):
         super().__init__(*args)
-        self.nrf_provider = NRFProvides(self, "fiveg-nrf")
+        self.nrf_provider = NRFProvides(self, "fiveg_nrf")
         self.framework.observe(
             self.on.fiveg_nrf_relation_joined, self._on_fiveg_nrf_relation_joined
         )
@@ -110,7 +110,7 @@ LIBAPI = 0
 
 # Increment this PATCH version before using `charmcraft publish-lib` or reset
 # to 0 if you are raising the major API version
-LIBPATCH = 1
+LIBPATCH = 2
 
 PYDEPS = ["pydantic", "pytest-interface-tester"]
 
