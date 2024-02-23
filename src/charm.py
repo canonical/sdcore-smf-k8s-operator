@@ -18,7 +18,7 @@ from charms.sdcore_nrf_k8s.v0.fiveg_nrf import NRFRequires  # type: ignore[impor
 from charms.tls_certificates_interface.v2.tls_certificates import (  # type: ignore[import]
     CertificateAvailableEvent,
     CertificateExpiringEvent,
-    TLSCertificatesRequiresV2,
+    TLSCertificatesRequiresV3,
     generate_csr,
     generate_private_key,
 )
@@ -76,7 +76,7 @@ class SMFOperatorCharm(CharmBase):
                 }
             ],
         )
-        self._certificates = TLSCertificatesRequiresV2(self, "certificates")
+        self._certificates = TLSCertificatesRequiresV3(self, "certificates")
 
         self.framework.observe(self.on.install, self._on_install)
         self.framework.observe(self.on.smf_pebble_ready, self._configure_sdcore_smf)

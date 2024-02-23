@@ -571,7 +571,7 @@ class TestCharm(unittest.TestCase):
             (root / "support/TLS/smf.csr").read_text()
 
     @patch(
-        "charms.tls_certificates_interface.v2.tls_certificates.TLSCertificatesRequiresV2.request_certificate_creation",  # noqa: E501
+        "charms.tls_certificates_interface.v3.tls_certificates.TLSCertificatesRequiresV3.request_certificate_creation",  # noqa: E501
         new=Mock,
     )
     @patch("charm.generate_csr")
@@ -591,7 +591,7 @@ class TestCharm(unittest.TestCase):
         self.assertEqual((root / "support/TLS/smf.csr").read_text(), csr.decode())
 
     @patch(
-        "charms.tls_certificates_interface.v2.tls_certificates.TLSCertificatesRequiresV2.request_certificate_creation",  # noqa: E501
+        "charms.tls_certificates_interface.v3.tls_certificates.TLSCertificatesRequiresV3.request_certificate_creation",  # noqa: E501
     )
     @patch("charm.generate_csr")
     def test_given_private_key_exists_and_cert_not_yet_requested_when_on_certificates_relation_joined_then_cert_is_requested(  # noqa: E501
@@ -612,7 +612,7 @@ class TestCharm(unittest.TestCase):
         patch_request_certificate_creation.assert_called_with(certificate_signing_request=csr)
 
     @patch(
-        "charms.tls_certificates_interface.v2.tls_certificates.TLSCertificatesRequiresV2.request_certificate_creation",  # noqa: E501
+        "charms.tls_certificates_interface.v3.tls_certificates.TLSCertificatesRequiresV3.request_certificate_creation",  # noqa: E501
     )
     def test_given_cert_already_stored_when_on_certificates_relation_joined_then_cert_is_not_requested(  # noqa: E501
         self, patch_request_certificate_creation
@@ -665,7 +665,7 @@ class TestCharm(unittest.TestCase):
             (root / "support/TLS/smf.pem").read_text()
 
     @patch(
-        "charms.tls_certificates_interface.v2.tls_certificates.TLSCertificatesRequiresV2.request_certificate_creation",  # noqa: E501
+        "charms.tls_certificates_interface.v3.tls_certificates.TLSCertificatesRequiresV3.request_certificate_creation",  # noqa: E501
     )
     @patch("charm.generate_csr")
     def test_given_certificate_does_not_match_stored_one_when_certificate_expiring_then_certificate_is_not_requested(  # noqa: E501
@@ -686,7 +686,7 @@ class TestCharm(unittest.TestCase):
         patch_request_certificate_creation.assert_not_called()
 
     @patch(
-        "charms.tls_certificates_interface.v2.tls_certificates.TLSCertificatesRequiresV2.request_certificate_creation",  # noqa: E501
+        "charms.tls_certificates_interface.v3.tls_certificates.TLSCertificatesRequiresV3.request_certificate_creation",  # noqa: E501
     )
     @patch("charm.generate_csr")
     def test_given_certificate_matches_stored_one_when_certificate_expiring_then_certificate_is_requested(  # noqa: E501
