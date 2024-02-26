@@ -13,7 +13,8 @@ on:
 jobs:
   check-libraries:
     uses: canonical/sdcore-github-workflows/.github/workflows/check-libraries.yaml@main
-    secrets: inherit
+    secrets:
+      CHARMCRAFT_AUTH: ${{ secrets.CHARMCRAFT_AUTH }}
 
   lint-report:
     uses: canonical/sdcore-github-workflows/.github/workflows/lint-report.yaml@main
@@ -44,4 +45,5 @@ jobs:
     with:
       charm-file-name: "sdcore-smf-k8s_ubuntu-22.04-amd64.charm"
       track-name: 1.3
-    secrets: inherit
+    secrets:
+      CHARMCRAFT_AUTH: ${{ secrets.CHARMCRAFT_AUTH }}
