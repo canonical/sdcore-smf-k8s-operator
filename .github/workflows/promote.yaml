@@ -26,4 +26,6 @@ jobs:
       promotion: ${{ github.event.inputs.promotion }}
       track-name: ${{ github.event.inputs.track-name }}
 
-    secrets: inherit
+    secrets:
+      CHARMCRAFT_AUTH: ${{ secrets.CHARMCRAFT_AUTH }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
