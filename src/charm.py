@@ -105,11 +105,9 @@ class SMFOperatorCharm(CharmBase):
         """
         if not self._container.can_connect():
             self.unit.status = WaitingStatus("Waiting for container to be ready")
-            event.defer()
             return
         if not self._storage_is_attached():
             self.unit.status = WaitingStatus("Waiting for storage to be attached")
-            event.defer()
             return
         self._write_ue_config_file()
 
@@ -146,7 +144,6 @@ class SMFOperatorCharm(CharmBase):
             return
         if not self._storage_is_attached():
             self.unit.status = WaitingStatus("Waiting for storage to be attached")
-            event.defer()
             return
         if not _get_pod_ip():
             self.unit.status = WaitingStatus("Waiting for pod IP address to be available")
