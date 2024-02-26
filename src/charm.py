@@ -16,7 +16,6 @@ from charms.prometheus_k8s.v0.prometheus_scrape import (  # type: ignore[import]
 )
 from charms.sdcore_nrf_k8s.v0.fiveg_nrf import NRFRequires  # type: ignore[import]
 from charms.tls_certificates_interface.v3.tls_certificates import (  # type: ignore[import]
-    CertificateAvailableEvent,
     CertificateExpiringEvent,
     TLSCertificatesRequiresV3,
     generate_csr,
@@ -86,17 +85,12 @@ class SMFOperatorCharm(CharmBase):
         self.framework.observe(self.on.fiveg_nrf_relation_joined, self._configure_sdcore_smf)
         self.framework.observe(self._nrf_requires.on.nrf_available, self._configure_sdcore_smf)
         self.framework.observe(self._nrf_requires.on.nrf_broken, self._on_nrf_broken)
-        self.framework.observe(
-            self.on.certificates_relation_created, self._on_certificates_relation_created
-        )
-        self.framework.observe(
-            self.on.certificates_relation_joined, self._on_certificates_relation_joined
-        )
+        self.framework.observe(self.on.certificates_relation_joined, self._configure_sdcore_smf)
         self.framework.observe(
             self.on.certificates_relation_broken, self._on_certificates_relation_broken
         )
         self.framework.observe(
-            self._certificates.on.certificate_available, self._on_certificate_available
+            self._certificates.on.certificate_available, self._configure_sdcore_smf
         )
         self.framework.observe(
             self._certificates.on.certificate_expiring, self._on_certificate_expiring
@@ -129,7 +123,7 @@ class SMFOperatorCharm(CharmBase):
                 return relation
         return None
 
-    def _configure_sdcore_smf(self, event: EventBase) -> None:
+    def _configure_sdcore_smf(self, event: EventBase) -> None:  # noqa C901
         """Adds pebble layer and manages Juju unit status.
 
         Args:
@@ -155,22 +149,24 @@ class SMFOperatorCharm(CharmBase):
             return
         if not _get_pod_ip():
             self.unit.status = WaitingStatus("Waiting for pod IP address to be available")
-            event.defer()
             return
         if not self._ue_config_file_is_written():
-            event.defer()
             self.unit.status = WaitingStatus(
                 f"Waiting for `{UEROUTING_CONFIG_FILE}` config file to be pushed to workload container"  # noqa: W505, E501
             )
             return
-        if not self._certificate_is_stored():
+        if not self._private_key_is_stored():
+            self._generate_private_key()
+        if not self._csr_is_stored():
+            self._request_new_certificate()
+
+        provider_certificate = self._get_current_provider_certificate()
+        if not provider_certificate:
             self.unit.status = WaitingStatus("Waiting for certificates to be stored")
-            event.defer()
             return
-        if self._update_config_file():
-            self._configure_pebble(restart=True)
-        else:
-            self._configure_pebble()
+        certificate_changed = self._update_certificate(provider_certificate=provider_certificate)
+        config_file_changed = self._update_config_file()
+        self._configure_pebble(restart=(config_file_changed or certificate_changed))
         self.unit.status = ActiveStatus()
 
     def _on_nrf_broken(self, event: EventBase) -> None:
@@ -189,13 +185,6 @@ class SMFOperatorCharm(CharmBase):
         """
         self.unit.status = BlockedStatus("Waiting for database relation")
 
-    def _on_certificates_relation_created(self, event: EventBase) -> None:
-        """Generates Private key."""
-        if not self._container.can_connect():
-            event.defer()
-            return
-        self._generate_private_key()
-
     def _on_certificates_relation_broken(self, event: EventBase) -> None:
         """Deletes TLS related artifacts and reconfigures workload."""
         if not self._container.can_connect():
@@ -206,32 +195,30 @@ class SMFOperatorCharm(CharmBase):
         self._delete_certificate()
         self.unit.status = BlockedStatus("Waiting for certificate relation")
 
-    def _on_certificates_relation_joined(self, event: EventBase) -> None:
-        """Generates CSR and requests new certificate."""
-        if not self._container.can_connect():
-            event.defer()
-            return
-        if not self._private_key_is_stored():
-            event.defer()
-            return
-        if self._certificate_is_stored():
-            return
+    def _get_current_provider_certificate(self) -> str | None:
+        """Compares the current certificate request to what is in the interface.
 
-        self._request_new_certificate()
+        Returns the current valid provider certificate if present
+        """
+        csr = self._get_stored_csr()
+        for provider_certificate in self._certificates.get_assigned_certificates():
+            if provider_certificate.csr == csr:
+                return provider_certificate.certificate
+        return None
 
-    def _on_certificate_available(self, event: CertificateAvailableEvent) -> None:
-        """Pushes certificate to workload and configures workload."""
-        if not self._container.can_connect():
-            event.defer()
-            return
-        if not self._csr_is_stored():
-            logger.warning("Certificate is available but no CSR is stored")
-            return
-        if event.certificate_signing_request != self._get_stored_csr():
-            logger.debug("Stored CSR doesn't match one in certificate available event")
-            return
-        self._store_certificate(event.certificate)
-        self._configure_sdcore_smf(event)
+    def _update_certificate(self, provider_certificate) -> bool:
+        """Compares the provided certificate to what is stored.
+
+        Returns True if the certificate was updated
+        """
+        existing_certificate = (
+            self._get_stored_certificate() if self._certificate_is_stored() else ""
+        )
+
+        if existing_certificate != provider_certificate:
+            self._store_certificate(certificate=provider_certificate)
+            return True
+        return False
 
     def _on_certificate_expiring(self, event: CertificateExpiringEvent) -> None:
         """Requests new certificate."""
