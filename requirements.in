@@ -1,7 +1,7 @@
 cosl
 ops
 jinja2
-pydantic<2.0
+pydantic==2.5.3
 pytest-interface-tester
 jsonschema
 cryptography

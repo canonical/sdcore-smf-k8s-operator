@@ -4,6 +4,8 @@
 #
 #    pip-compile requirements.in
 #
+annotated-types==0.6.0
+    # via pydantic
 attrs==23.2.0
     # via
     #   jsonschema
@@ -39,10 +41,12 @@ pluggy==1.4.0
     # via pytest
 pycparser==2.21
     # via cffi
-pydantic==1.10.14
+pydantic==2.5.3
     # via
     #   -r requirements.in
     #   pytest-interface-tester
+pydantic-core==2.14.6
+    # via pydantic
 pytest==8.0.2
     # via pytest-interface-tester
 pytest-interface-tester==2.0.1
@@ -66,5 +70,6 @@ typing-extensions==4.10.0
     # via
     #   cosl
     #   pydantic
+    #   pydantic-core
 websocket-client==1.7.0
     # via ops
