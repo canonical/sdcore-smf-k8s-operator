@@ -1,0 +1,7 @@
+cosl
+ops
+jinja2
+pydantic<2.0
+pytest-interface-tester
+jsonschema
+cryptography
