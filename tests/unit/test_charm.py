@@ -121,42 +121,27 @@ class TestCharm(unittest.TestCase):
         )
         return relation_id
 
-    def test_given_container_cant_connect_when_on_install_then_status_is_waiting(
-        self,
+    @patch("charms.sdcore_nrf_k8s.v0.fiveg_nrf.NRFRequires.nrf_url")
+    @patch("charm.check_output")
+    def test_given_container_can_connect_and_storage_is_attached_when_configure_sdcore_smf_is_called_then_ue_config_file_is_written_to_workload_container(  # noqa: E501
+        self, patch_check_output, patch_nrf_url
     ):
-        self.harness.set_can_connect(container=self.container_name, val=False)
-
-        self.harness.charm._on_install(event=Mock())
-
-        self.assertEqual(
-            self.harness.model.unit.status, WaitingStatus("Waiting for container to be ready")
-        )
-
-    def test_given_container_can_connect_and_storage_is_attached_when_on_install_then_ue_config_file_is_written_to_workload_container(  # noqa: E501
-        self,
-    ):
+        patch_check_output.return_value = POD_IP
+        patch_nrf_url.return_value = VALID_NRF_URL
+        self.harness.add_storage("certs", attach=True)
         self.harness.add_storage("config", attach=True)
         self.harness.set_can_connect(container=self.container_name, val=True)
         root = self.harness.get_filesystem_root(self.container_name)
+        self._create_certificates_relation()
+        self._create_database_relation_and_populate_data()
+        self._create_nrf_relation()
 
-        self.harness.charm._on_install(event=Mock())
+        self.harness.charm._configure_sdcore_smf(event=Mock())
 
         expected_config_file_content = self._read_file("src/uerouting.yaml")
 
         self.assertEqual(
             (root / "etc/smf/uerouting.yaml").read_text(), expected_config_file_content
-        )
-
-    def test_given_container_can_connect_and_storage_is_not_attached_when_on_install_then_status_is_waiting(  # noqa: E501
-        self,
-    ):
-        self.harness.set_can_connect(container=self.container_name, val=True)
-
-        self.harness.charm._on_install(event=Mock())
-
-        self.assertEqual(
-            self.harness.model.unit.status,
-            WaitingStatus("Waiting for storage to be attached"),
         )
 
     def test_given_database_relation_not_created_when_configure_sdcore_smf_is_called_then_status_is_blocked(  # noqa: E501
@@ -288,30 +273,6 @@ class TestCharm(unittest.TestCase):
         self.assertEqual(
             self.harness.model.unit.status,
             WaitingStatus("Waiting for NRF relation to be available"),
-        )
-
-    @patch("charm.check_output")
-    @patch("charms.sdcore_nrf_k8s.v0.fiveg_nrf.NRFRequires.nrf_url")
-    def test_given_ue_config_file_is_not_written_when_configure_sdcore_smf_is_called_then_status_is_waiting(  # noqa: E501
-        self,
-        patch_nrf_url,
-        patch_check_output,
-    ):
-        self.harness.add_storage("config", attach=True)
-        self._create_database_relation_and_populate_data()
-        self._create_nrf_relation()
-        self._create_certificates_relation()
-        patch_check_output.return_value = POD_IP
-        self.harness.set_can_connect(container=self.container_name, val=True)
-        patch_nrf_url.return_value = VALID_NRF_URL
-
-        self.harness.charm._configure_sdcore_smf(event=Mock())
-
-        self.assertEqual(
-            self.harness.model.unit.status,
-            WaitingStatus(
-                "Waiting for `uerouting.yaml` config file to be pushed to workload container"
-            ),
         )
 
     @patch("charms.sdcore_nrf_k8s.v0.fiveg_nrf.NRFRequires.nrf_url")
