@@ -155,7 +155,7 @@ pytest-asyncio==0.21.1
     # via
     #   -r test-requirements.in
     #   pytest-operator
-pytest-operator==0.33.0
+pytest-operator==0.34.0
     # via -r test-requirements.in
 python-dateutil==2.8.2
     # via kubernetes
