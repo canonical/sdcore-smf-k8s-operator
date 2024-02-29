@@ -22,7 +22,7 @@ from charms.tls_certificates_interface.v3.tls_certificates import (  # type: ign
     generate_private_key,
 )
 from jinja2 import Environment, FileSystemLoader
-from ops.charm import CharmBase, InstallEvent
+from ops.charm import CharmBase
 from ops.framework import EventBase
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, Port, WaitingStatus
@@ -77,7 +77,6 @@ class SMFOperatorCharm(CharmBase):
         )
         self._certificates = TLSCertificatesRequiresV3(self, "certificates")
 
-        self.framework.observe(self.on.install, self._on_install)
         self.framework.observe(self.on.update_status, self._configure_sdcore_smf)
         self.framework.observe(self.on.smf_pebble_ready, self._configure_sdcore_smf)
         self.framework.observe(self.on.database_relation_joined, self._configure_sdcore_smf)
@@ -96,20 +95,6 @@ class SMFOperatorCharm(CharmBase):
         self.framework.observe(
             self._certificates.on.certificate_expiring, self._on_certificate_expiring
         )
-
-    def _on_install(self, event: InstallEvent) -> None:
-        """Handles the install event.
-
-        Args:
-            event (InstallEvent): Juju event.
-        """
-        if not self._container.can_connect():
-            self.unit.status = WaitingStatus("Waiting for container to be ready")
-            return
-        if not self._storage_is_attached():
-            self.unit.status = WaitingStatus("Waiting for storage to be attached")
-            return
-        self._write_ue_config_file()
 
     def _missing_mandatory_relations(self) -> Optional[str]:
         """Returns whether a mandatory Juju relation is missing.
@@ -149,10 +134,7 @@ class SMFOperatorCharm(CharmBase):
             self.unit.status = WaitingStatus("Waiting for pod IP address to be available")
             return
         if not self._ue_config_file_is_written():
-            self.unit.status = WaitingStatus(
-                f"Waiting for `{UEROUTING_CONFIG_FILE}` config file to be pushed to workload container"  # noqa: W505, E501
-            )
-            return
+            self._write_ue_config_file()
         if not self._private_key_is_stored():
             self._generate_private_key()
         if not self._csr_is_stored():
