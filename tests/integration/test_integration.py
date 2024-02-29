@@ -19,6 +19,7 @@ APP_NAME = METADATA["name"]
 NRF_APP_NAME = "sdcore-nrf-k8s"
 DATABASE_APP_NAME = "mongodb-k8s"
 TLS_PROVIDER_APP_NAME = "self-signed-certificates"
+GRAFANA_AGENT_APP_NAME = "grafana-agent-k8s"
 
 
 async def _deploy_database(ops_test: OpsTest):
@@ -53,6 +54,16 @@ async def _deploy_tls_provider(ops_test: OpsTest):
     )
 
 
+async def _deploy_grafana_agent(ops_test: OpsTest):
+    """Deploy a Grafana agent."""
+    assert ops_test.model
+    await ops_test.model.deploy(
+        GRAFANA_AGENT_APP_NAME,
+        application_name=GRAFANA_AGENT_APP_NAME,
+        channel="stable",
+    )
+
+
 @pytest.fixture(scope="module")
 @pytest.mark.abort_on_fail
 async def build_and_deploy(ops_test: OpsTest):
@@ -71,6 +82,7 @@ async def build_and_deploy(ops_test: OpsTest):
     await _deploy_database(ops_test)
     await _deploy_nrf(ops_test)
     await _deploy_tls_provider(ops_test)
+    await _deploy_grafana_agent(ops_test)
 
 
 @pytest.mark.abort_on_fail
@@ -97,6 +109,9 @@ async def test_relate_and_wait_for_active_status(ops_test: OpsTest, build_and_de
     await ops_test.model.integrate(relation1=NRF_APP_NAME, relation2=TLS_PROVIDER_APP_NAME)
     await ops_test.model.integrate(relation1=APP_NAME, relation2=NRF_APP_NAME)
     await ops_test.model.integrate(relation1=APP_NAME, relation2=TLS_PROVIDER_APP_NAME)
+    await ops_test.model.integrate(
+        relation1=f"{APP_NAME}:logging", relation2=GRAFANA_AGENT_APP_NAME
+    )
     await ops_test.model.wait_for_idle(
         apps=[APP_NAME],
         status="active",

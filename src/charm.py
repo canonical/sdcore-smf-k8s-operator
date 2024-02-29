@@ -11,6 +11,7 @@ from subprocess import check_output
 from typing import Optional
 
 from charms.data_platform_libs.v0.data_interfaces import DatabaseRequires  # type: ignore[import]
+from charms.loki_k8s.v1.loki_push_api import LogForwarder  # type: ignore[import]
 from charms.prometheus_k8s.v0.prometheus_scrape import (  # type: ignore[import]  # noqa: E501
     MetricsEndpointProvider,
 )
@@ -41,6 +42,7 @@ PRIVATE_KEY_NAME = "smf.key"
 CSR_NAME = "smf.csr"
 CERTIFICATE_NAME = "smf.pem"
 CERTIFICATE_COMMON_NAME = "smf.sdcore"
+LOGGING_RELATION_NAME = "logging"
 
 
 class SMFOperatorCharm(CharmBase):
@@ -62,6 +64,7 @@ class SMFOperatorCharm(CharmBase):
         self._database = DatabaseRequires(
             self, relation_name="database", database_name=DATABASE_NAME
         )
+        self._logging = LogForwarder(charm=self, relation_name=LOGGING_RELATION_NAME)
         self.unit.set_ports(
             PROMETHEUS_PORT,
             SMF_SBI_PORT,
