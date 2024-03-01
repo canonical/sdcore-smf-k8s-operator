@@ -5,6 +5,7 @@ description: Charmed Operator for the SD-Core Session Management Function (SMF).
 
 assumes:
   - k8s-api
+  - juju >= 3.4
 
 containers:
   smf:
@@ -40,3 +41,5 @@ requires:
     interface: fiveg_nrf
   certificates:
     interface: tls-certificates
+  logging:
+    interface: loki_push_api
