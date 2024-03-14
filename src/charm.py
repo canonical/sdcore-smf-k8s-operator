@@ -23,10 +23,10 @@ from charms.tls_certificates_interface.v3.tls_certificates import (  # type: ign
     generate_private_key,
 )
 from jinja2 import Environment, FileSystemLoader
+from ops import ActiveStatus, BlockedStatus, CollectStatusEvent, ModelError, Port, WaitingStatus
 from ops.charm import CharmBase
 from ops.framework import EventBase
 from ops.main import main
-from ops.model import ActiveStatus, BlockedStatus, Port, WaitingStatus
 
 logger = logging.getLogger(__name__)
 
@@ -54,9 +54,8 @@ class SMFOperatorCharm(CharmBase):
             # NOTE: In cases where leader status is lost before the charm is
             # finished processing all teardown events, this prevents teardown
             # event code from running. Luckily, for this charm, none of the
-            # teardown code is necessary to preform if we're removing the
+            # teardown code is necessary to perform if we're removing the
             # charm.
-            self.unit.status = BlockedStatus("Scaling is not implemented for this charm")
             return
         self._container_name = self._service_name = "smf"
         self._container = self.unit.get_container(self._container_name)
@@ -79,15 +78,15 @@ class SMFOperatorCharm(CharmBase):
             ],
         )
         self._certificates = TLSCertificatesRequiresV3(self, "certificates")
-
+        self.framework.observe(self.on.collect_unit_status, self._on_collect_unit_status)
         self.framework.observe(self.on.update_status, self._configure_sdcore_smf)
         self.framework.observe(self.on.smf_pebble_ready, self._configure_sdcore_smf)
         self.framework.observe(self.on.database_relation_joined, self._configure_sdcore_smf)
-        self.framework.observe(self.on.database_relation_broken, self._on_database_relation_broken)
+        self.framework.observe(self.on.database_relation_broken, self._configure_sdcore_smf)
         self.framework.observe(self._database.on.database_created, self._configure_sdcore_smf)
         self.framework.observe(self.on.fiveg_nrf_relation_joined, self._configure_sdcore_smf)
         self.framework.observe(self._nrf_requires.on.nrf_available, self._configure_sdcore_smf)
-        self.framework.observe(self._nrf_requires.on.nrf_broken, self._on_nrf_broken)
+        self.framework.observe(self._nrf_requires.on.nrf_broken, self._configure_sdcore_smf)
         self.framework.observe(self.on.certificates_relation_joined, self._configure_sdcore_smf)
         self.framework.observe(
             self.on.certificates_relation_broken, self._on_certificates_relation_broken
@@ -99,16 +98,95 @@ class SMFOperatorCharm(CharmBase):
             self._certificates.on.certificate_expiring, self._on_certificate_expiring
         )
 
-    def _missing_mandatory_relations(self) -> Optional[str]:
-        """Returns whether a mandatory Juju relation is missing.
+    def _on_collect_unit_status(self, event: CollectStatusEvent):  # noqa C901
+        """Check the unit status and set to Unit when CollectStatusEvent is fired.
 
-        Returns:
-            str: Missing mandatory relation.
+        Args:
+            event: CollectStatusEvent
         """
+        if not self.unit.is_leader():
+            # NOTE: In cases where leader status is lost before the charm is
+            # finished processing all teardown events, this prevents teardown
+            # event code from running. Luckily, for this charm, none of the
+            # teardown code is necessary to perform if we're removing the
+            # charm.
+            event.add_status(BlockedStatus("Scaling is not implemented for this charm"))
+            return
+
         for relation in ["database", "fiveg_nrf", "certificates"]:
             if not self._relation_created(relation):
-                return relation
-        return None
+                event.add_status(BlockedStatus(f"Waiting for {relation} relation"))
+
+        if not self._container.can_connect():
+            event.add_status(WaitingStatus("Waiting for container to be ready"))
+            return
+
+        if not self._database_is_available():
+            event.add_status(WaitingStatus("Waiting for `database` relation to be available"))
+            return
+
+        if not self._nrf_is_available():
+            event.add_status(WaitingStatus("Waiting for NRF relation to be available"))
+            return
+
+        if not self._storage_is_attached():
+            event.add_status(WaitingStatus("Waiting for storage to be attached"))
+            return
+
+        if not _get_pod_ip():
+            event.add_status(WaitingStatus("Waiting for pod IP address to be available"))
+            return
+
+        if self._csr_is_stored() and not self._get_current_provider_certificate():
+            event.add_status(WaitingStatus("Waiting for certificates to be stored"))
+            return
+
+        if not self._smf_service_is_running():
+            event.add_status(WaitingStatus("Waiting for SMF service to start"))
+            return
+
+        event.add_status(ActiveStatus())
+
+    def _smf_service_is_running(self) -> bool:
+        """Check if the SMF service is running.
+
+        Returns:
+            bool: Whether the SMF service is running.
+        """
+        if not self._container.can_connect():
+            return False
+        try:
+            service = self._container.get_service(self._service_name)
+        except ModelError:
+            return False
+        return service.is_running()
+
+    def ready_to_configure(self) -> bool:
+        """Returns whether the preconditions are met to proceed with the configuration.
+
+        Returns:
+            ready_to_configure: True if all conditions are met else False
+        """
+        if not self._container.can_connect():
+            return False
+
+        for relation in ["database", "fiveg_nrf", "certificates"]:
+            if not self._relation_created(relation):
+                return False
+
+        if not self._database_is_available():
+            return False
+
+        if not self._nrf_is_available():
+            return False
+
+        if not self._storage_is_attached():
+            return False
+
+        if not _get_pod_ip():
+            return False
+
+        return True
 
     def _configure_sdcore_smf(self, event: EventBase) -> None:  # noqa C901
         """Adds pebble layer and manages Juju unit status.
@@ -116,57 +194,97 @@ class SMFOperatorCharm(CharmBase):
         Args:
             event: Juju event
         """
-        if missing_relation := self._missing_mandatory_relations():
-            self.unit.status = BlockedStatus(
-                f"Waiting for `{missing_relation}` relation to be created"
-            )
+        if not self.ready_to_configure():
+            logger.info("The preconditions for the configuration are not met yet.")
             return
-        if not self._container.can_connect():
-            self.unit.status = WaitingStatus("Waiting for container to be ready")
-            return
-        if not self._database_is_available():
-            self.unit.status = WaitingStatus("Waiting for `database` relation to be available")
-            return
-        if not self._nrf_is_available():
-            self.unit.status = WaitingStatus("Waiting for NRF relation to be available")
-            return
-        if not self._storage_is_attached():
-            self.unit.status = WaitingStatus("Waiting for storage to be attached")
-            return
-        if not _get_pod_ip():
-            self.unit.status = WaitingStatus("Waiting for pod IP address to be available")
-            return
+
         if not self._ue_config_file_is_written():
             self._write_ue_config_file()
+
         if not self._private_key_is_stored():
             self._generate_private_key()
+
         if not self._csr_is_stored():
             self._request_new_certificate()
 
         provider_certificate = self._get_current_provider_certificate()
         if not provider_certificate:
-            self.unit.status = WaitingStatus("Waiting for certificates to be stored")
             return
-        certificate_changed = self._update_certificate(provider_certificate=provider_certificate)
-        config_file_changed = self._update_config_file()
-        self._configure_pebble(restart=(config_file_changed or certificate_changed))
-        self.unit.status = ActiveStatus()
 
-    def _on_nrf_broken(self, event: EventBase) -> None:
-        """Event handler for NRF relation broken.
+        if certificate_update_required := self._is_certificate_update_required(
+            provider_certificate
+        ):
+            self._store_certificate(certificate=provider_certificate)
+
+        desired_config_file = self._generate_smf_config_file()
+        if config_update_required := self._is_config_update_required(desired_config_file):
+            self._push_config_file(content=desired_config_file)
+
+        should_restart = config_update_required or certificate_update_required
+        self._configure_pebble(restart=should_restart)
+
+    def _push_config_file(
+        self,
+        content: str,
+    ) -> None:
+        """Push the SMF config file to the container.
 
         Args:
-            event (NRFBrokenEvent): Juju event
+            content (str): Content of the config file.
         """
-        self.unit.status = BlockedStatus("Waiting for fiveg_nrf relation")
+        self._container.push(
+            path=f"{BASE_CONFIG_PATH}/{CONFIG_FILE}", source=content, make_dirs=True
+        )
+        logger.info("Pushed: %s to workload.", CONFIG_FILE)
 
-    def _on_database_relation_broken(self, event: EventBase) -> None:
-        """Event handler for database relation broken.
+    def _is_config_update_required(self, content: str) -> bool:
+        """Decides whether config update is required by checking existence and config content.
 
         Args:
-            event: Juju event
+            content (str): desired config file content
+
+        Returns:
+            True if config update is required else False
         """
-        self.unit.status = BlockedStatus("Waiting for database relation")
+        if not self._config_file_is_written() or not self._config_file_content_matches(
+            content=content
+        ):
+            return True
+        return False
+
+    def _generate_smf_config_file(self) -> str:
+        """Handles creation of the SMF config file based on a given template.
+
+        Returns:
+            content (str): desired config file content
+        """
+        return self._render_config_file(
+            database_url=self._get_database_data()["uris"].split(",")[0],
+            database_name=DATABASE_NAME,
+            smf_url=self._smf_hostname,
+            smf_sbi_port=SMF_SBI_PORT,
+            nrf_url=self._nrf_requires.nrf_url,
+            pod_ip=_get_pod_ip(),  # type: ignore[arg-type]
+            scheme="https",
+            tls_key_path=f"{CERTS_DIR_PATH}/{PRIVATE_KEY_NAME}",
+            tls_certificate_path=f"{CERTS_DIR_PATH}/{CERTIFICATE_NAME}",
+        )
+
+    def _is_certificate_update_required(self, provider_certificate) -> bool:
+        """Checks the provided certificate and existing certificate.
+
+        Returns True if update is required.
+
+        Args:
+            provider_certificate: str
+        Returns:
+            True if update is required else False
+        """
+        return self._get_existing_certificate() != provider_certificate
+
+    def _get_existing_certificate(self) -> str:
+        """Returns the existing certificate if present else empty string."""
+        return self._get_stored_certificate() if self._certificate_is_stored() else ""
 
     def _on_certificates_relation_broken(self, event: EventBase) -> None:
         """Deletes TLS related artifacts and reconfigures workload."""
@@ -176,7 +294,6 @@ class SMFOperatorCharm(CharmBase):
         self._delete_private_key()
         self._delete_csr()
         self._delete_certificate()
-        self.unit.status = BlockedStatus("Waiting for certificate relation")
 
     def _get_current_provider_certificate(self) -> str | None:
         """Compares the current certificate request to what is in the interface.
@@ -188,20 +305,6 @@ class SMFOperatorCharm(CharmBase):
             if provider_certificate.csr == csr:
                 return provider_certificate.certificate
         return None
-
-    def _update_certificate(self, provider_certificate) -> bool:
-        """Compares the provided certificate to what is stored.
-
-        Returns True if the certificate was updated
-        """
-        existing_certificate = (
-            self._get_stored_certificate() if self._certificate_is_stored() else ""
-        )
-
-        if existing_certificate != provider_certificate:
-            self._store_certificate(certificate=provider_certificate)
-            return True
-        return False
 
     def _on_certificate_expiring(self, event: CertificateExpiringEvent) -> None:
         """Requests new certificate."""
@@ -305,43 +408,6 @@ class SMFOperatorCharm(CharmBase):
             self._container.restart(self._service_name)
             return
         self._container.replan()
-
-    def _update_config_file(self) -> bool:
-        """Updates config file.
-
-        Writes the config file if it does not exist or
-        the content does not match.
-
-        Returns: True if config file was updated, False otherwise.
-        """
-        content = self._render_config_file(
-            database_url=self._get_database_data()["uris"].split(",")[0],
-            database_name=DATABASE_NAME,
-            smf_url=self._smf_hostname,
-            smf_sbi_port=SMF_SBI_PORT,
-            nrf_url=self._nrf_requires.nrf_url,
-            pod_ip=_get_pod_ip(),  # type: ignore[arg-type]
-            scheme="https",
-            tls_key_path=f"{CERTS_DIR_PATH}/{PRIVATE_KEY_NAME}",
-            tls_certificate_path=f"{CERTS_DIR_PATH}/{CERTIFICATE_NAME}",
-        )
-        if not self._config_file_is_written() or not self._config_file_content_matches(
-            content=content
-        ):
-            self._write_config_file(content=content)
-            return True
-        return False
-
-    def _write_config_file(self, content: str) -> None:
-        """Writes config file to workload.
-
-        Args:
-            content (str): Config file content.
-        """
-        self._container.push(
-            path=f"{BASE_CONFIG_PATH}/{CONFIG_FILE}", source=content, make_dirs=True
-        )
-        logger.info("Pushed: %s to workload.", CONFIG_FILE)
 
     def _write_ue_config_file(self) -> None:
         """Writes UE config file to workload."""
