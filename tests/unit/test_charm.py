@@ -148,10 +148,10 @@ class TestCharm(unittest.TestCase):
         self,
     ):
         self.harness.charm._configure_sdcore_smf(event=Mock())
-
+        self.harness.evaluate_status()
         self.assertEqual(
             self.harness.model.unit.status,
-            BlockedStatus("Waiting for `database` relation to be created"),
+            BlockedStatus("Waiting for database relation"),
         )
 
     def test_given_nrf_relation_not_created_when_configure_sdcore_smf_is_called_then_status_is_blocked(  # noqa: E501
@@ -160,10 +160,10 @@ class TestCharm(unittest.TestCase):
         self._create_database_relation()
 
         self.harness.charm._configure_sdcore_smf(event=Mock())
-
+        self.harness.evaluate_status()
         self.assertEqual(
             self.harness.model.unit.status,
-            BlockedStatus("Waiting for `fiveg_nrf` relation to be created"),
+            BlockedStatus("Waiting for fiveg_nrf relation"),
         )
 
     def test_given_certificates_relation_not_created_when_configure_sdcore_smf_is_called_then_status_is_blocked(  # noqa: E501
@@ -173,10 +173,10 @@ class TestCharm(unittest.TestCase):
         self._create_nrf_relation()
 
         self.harness.charm._configure_sdcore_smf(event=Mock())
-
+        self.harness.evaluate_status()
         self.assertEqual(
             self.harness.model.unit.status,
-            BlockedStatus("Waiting for `certificates` relation to be created"),
+            BlockedStatus("Waiting for certificates relation"),
         )
 
     @patch("charms.sdcore_nrf_k8s.v0.fiveg_nrf.NRFRequires.nrf_url")
@@ -199,7 +199,7 @@ class TestCharm(unittest.TestCase):
         self.harness.container_pebble_ready(self.container_name)
 
         self.harness.remove_relation(nrf_relation_id)
-
+        self.harness.evaluate_status()
         self.assertEqual(
             self.harness.model.unit.status,
             BlockedStatus("Waiting for fiveg_nrf relation"),
@@ -225,7 +225,7 @@ class TestCharm(unittest.TestCase):
         self.harness.container_pebble_ready(self.container_name)
 
         self.harness.remove_relation(database_relation_id)
-
+        self.harness.evaluate_status()
         self.assertEqual(
             self.harness.model.unit.status,
             BlockedStatus("Waiting for database relation"),
@@ -240,7 +240,7 @@ class TestCharm(unittest.TestCase):
         self.harness.set_can_connect(container=self.container_name, val=False)
 
         self.harness.charm._configure_sdcore_smf(event=Mock())
-
+        self.harness.evaluate_status()
         self.assertEqual(
             self.harness.model.unit.status, WaitingStatus("Waiting for container to be ready")
         )
@@ -254,7 +254,7 @@ class TestCharm(unittest.TestCase):
         self.harness.set_can_connect(container=self.container_name, val=True)
 
         self.harness.charm._configure_sdcore_smf(event=Mock())
-
+        self.harness.evaluate_status()
         self.assertEqual(
             self.harness.model.unit.status,
             WaitingStatus("Waiting for `database` relation to be available"),
@@ -269,7 +269,7 @@ class TestCharm(unittest.TestCase):
         self.harness.set_can_connect(container=self.container_name, val=True)
 
         self.harness.charm._configure_sdcore_smf(event=Mock())
-
+        self.harness.evaluate_status()
         self.assertEqual(
             self.harness.model.unit.status,
             WaitingStatus("Waiting for NRF relation to be available"),
@@ -285,6 +285,7 @@ class TestCharm(unittest.TestCase):
         self.harness.set_can_connect(container=self.container_name, val=True)
         patch_nrf_url.return_value = VALID_NRF_URL
         self.harness.charm._configure_sdcore_smf(event=Mock())
+        self.harness.evaluate_status()
         self.assertEqual(
             self.harness.model.unit.status,
             WaitingStatus("Waiting for storage to be attached"),
@@ -306,7 +307,7 @@ class TestCharm(unittest.TestCase):
         patch_nrf_url.return_value = VALID_NRF_URL
 
         self.harness.container_pebble_ready(container_name=self.container_name)
-
+        self.harness.evaluate_status()
         self.assertEqual(
             self.harness.model.unit.status,
             WaitingStatus("Waiting for pod IP address to be available"),
@@ -332,7 +333,7 @@ class TestCharm(unittest.TestCase):
         self.harness.charm._certificate_is_stored = Mock(return_value=False)
 
         self.harness.charm._configure_sdcore_smf(event=Mock())
-
+        self.harness.evaluate_status()
         self.assertEqual(
             self.harness.model.unit.status, WaitingStatus("Waiting for certificates to be stored")
         )
@@ -347,6 +348,11 @@ class TestCharm(unittest.TestCase):
         self.harness.add_storage(storage_name="certs", attach=True)
         self.harness.add_storage(storage_name="config", attach=True)
         root = self.harness.get_filesystem_root(self.container_name)
+        provider_certificate = Mock(ProviderCertificate)
+        provider_certificate.certificate = CERTIFICATE
+        provider_certificate.csr = CSR
+        patch_get_assigned_certificates.return_value = [provider_certificate]
+
         (root / "support/TLS/smf.pem").write_text(CERTIFICATE)
         (root / "support/TLS/smf.csr").write_text(CSR)
         (root / "etc/smf/uerouting.yaml").write_text(self._read_file("src/uerouting.yaml"))
@@ -358,13 +364,8 @@ class TestCharm(unittest.TestCase):
         self._create_database_relation_and_populate_data()
         self._create_certificates_relation()
 
-        provider_certificate = Mock(ProviderCertificate)
-        provider_certificate.certificate = CERTIFICATE
-        provider_certificate.csr = CSR
-        patch_get_assigned_certificates.return_value = [provider_certificate]
-
         self.harness.container_pebble_ready(self.container_name)
-
+        self.harness.evaluate_status()
         self.assertEqual(self.harness.model.unit.status, ActiveStatus())
 
     @patch(f"{CERTIFICATES_LIB}.get_assigned_certificates")
