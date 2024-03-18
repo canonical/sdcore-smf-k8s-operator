@@ -8,7 +8,7 @@ asttokens==2.4.1
     # via stack-data
 bcrypt==4.1.2
     # via paramiko
-black==24.2.0
+black==24.3.0
     # via -r test-requirements.in
 cachetools==5.3.3
     # via google-auth
