@@ -50,6 +50,7 @@ class SMFOperatorCharm(CharmBase):
 
     def __init__(self, *args):
         super().__init__(*args)
+        self.framework.observe(self.on.collect_unit_status, self._on_collect_unit_status)
         if not self.unit.is_leader():
             # NOTE: In cases where leader status is lost before the charm is
             # finished processing all teardown events, this prevents teardown
@@ -78,7 +79,6 @@ class SMFOperatorCharm(CharmBase):
             ],
         )
         self._certificates = TLSCertificatesRequiresV3(self, "certificates")
-        self.framework.observe(self.on.collect_unit_status, self._on_collect_unit_status)
         self.framework.observe(self.on.update_status, self._configure_sdcore_smf)
         self.framework.observe(self.on.smf_pebble_ready, self._configure_sdcore_smf)
         self.framework.observe(self.on.database_relation_joined, self._configure_sdcore_smf)
@@ -111,38 +111,48 @@ class SMFOperatorCharm(CharmBase):
             # teardown code is necessary to perform if we're removing the
             # charm.
             event.add_status(BlockedStatus("Scaling is not implemented for this charm"))
+            logger.info("Scaling is not implemented for this charm")
             return
 
         for relation in ["database", "fiveg_nrf", "certificates"]:
             if not self._relation_created(relation):
                 event.add_status(BlockedStatus(f"Waiting for {relation} relation"))
+                logger.info(f"Waiting for {relation} relation")
+                return
 
         if not self._container.can_connect():
             event.add_status(WaitingStatus("Waiting for container to be ready"))
+            logger.info("Waiting for container to be ready")
             return
 
         if not self._database_is_available():
             event.add_status(WaitingStatus("Waiting for `database` relation to be available"))
+            logger.info("Waiting for `database` relation to be available")
             return
 
         if not self._nrf_is_available():
             event.add_status(WaitingStatus("Waiting for NRF relation to be available"))
+            logger.info("Waiting for NRF relation to be available")
             return
 
         if not self._storage_is_attached():
             event.add_status(WaitingStatus("Waiting for storage to be attached"))
+            logger.info("Waiting for storage to be attached")
             return
 
         if not _get_pod_ip():
             event.add_status(WaitingStatus("Waiting for pod IP address to be available"))
+            logger.info("Waiting for pod IP address to be available")
             return
 
         if self._csr_is_stored() and not self._get_current_provider_certificate():
             event.add_status(WaitingStatus("Waiting for certificates to be stored"))
+            logger.info("Waiting for certificates to be stored")
             return
 
         if not self._smf_service_is_running():
             event.add_status(WaitingStatus("Waiting for SMF service to start"))
+            logger.info("Waiting for SMF service to start")
             return
 
         event.add_status(ActiveStatus())
