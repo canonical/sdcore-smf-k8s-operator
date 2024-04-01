@@ -40,7 +40,7 @@ flake8==6.1.0
     #   flake8-docstrings
     #   pep8-naming
     #   pyproject-flake8
-flake8-builtins==2.2.0
+flake8-builtins==2.4.0
     # via -r test-requirements.in
 flake8-docstrings==1.7.0
     # via -r test-requirements.in
