@@ -110,7 +110,7 @@ LIBAPI = 0
 
 # Increment this PATCH version before using `charmcraft publish-lib` or reset
 # to 0 if you are raising the major API version
-LIBPATCH = 2
+LIBPATCH = 3
 
 PYDEPS = ["pydantic", "pytest-interface-tester"]
 
@@ -146,7 +146,7 @@ class ProviderSchema(DataBagSchema):
 
 
 def data_matches_provider_schema(data: dict) -> bool:
-    """Returns whether data matches provider schema.
+    """Return whether data matches provider schema.
 
     Args:
         data (dict): Data to be validated.
@@ -171,11 +171,11 @@ class NRFAvailableEvent(EventBase):
         self.url = url
 
     def snapshot(self) -> dict:
-        """Returns snapshot."""
+        """Return snapshot."""
         return {"url": self.url}
 
     def restore(self, snapshot: dict) -> None:
-        """Restores snapshot."""
+        """Restore snapshot."""
         self.url = snapshot["url"]
 
 
@@ -208,7 +208,7 @@ class NRFRequires(Object):
         self.framework.observe(charm.on[relation_name].relation_broken, self._on_relation_broken)
 
     def _on_relation_changed(self, event: RelationChangedEvent) -> None:
-        """Handler triggered on relation changed event.
+        """Handle relation changed event.
 
         Args:
             event (RelationChangedEvent): Juju event.
@@ -220,7 +220,7 @@ class NRFRequires(Object):
             self.on.nrf_available.emit(url=remote_app_relation_data["url"])
 
     def _on_relation_broken(self, event: RelationBrokenEvent) -> None:
-        """Handler triggered on the NRF relation broken event.
+        """Handle the NRF relation broken event.
 
         Args:
             event (RelationBrokenEvent): Juju event.
@@ -229,7 +229,7 @@ class NRFRequires(Object):
 
     @property
     def nrf_url(self) -> Optional[str]:
-        """Returns NRF url.
+        """Return NRF url.
 
         Returns:
             str: NRF url.
@@ -276,7 +276,7 @@ class NRFProvides(Object):
         url: str,
         relation_id: int,
     ) -> None:
-        """Sets NRF url in the application(s) relation data.
+        """Set NRF url in the application(s) relation data.
 
         Args:
             url (str): NRF url.
@@ -300,7 +300,7 @@ class NRFProvides(Object):
         relation.data[self.charm.app].update({"url": url})
 
     def set_nrf_information_in_all_relations(self, url: str) -> None:
-        """Sets NRF url in applications for all applications.
+        """Set NRF url in applications for all applications.
 
         Args:
             url (str): NRF url.

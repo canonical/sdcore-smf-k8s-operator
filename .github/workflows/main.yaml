@@ -5,8 +5,6 @@ on:
     branches:
       - main
   push:
-    branches:
-      - main
   schedule:
     - cron: "20 7 * * 0"
 
@@ -47,3 +45,20 @@ jobs:
       track-name: 1.4
     secrets:
       CHARMCRAFT_AUTH: ${{ secrets.CHARMCRAFT_AUTH }}
+
+  publish-charm-on-push:
+    name: Publish Developer Charm To Branch
+    needs:
+      - lint-report
+      - static-analysis
+      - unit-tests-with-coverage
+      - integration-test
+    if: ${{ (github.ref_name != 'main') && (github.event_name == 'push') }}
+    uses: canonical/sdcore-github-workflows/.github/workflows/publish-charm.yaml@main
+    with:
+      branch-name: ${{ github.ref_name }}
+      charm-file-name: "sdcore-smf-k8s_ubuntu-22.04-amd64.charm"
+      track-name: 1.3
+    secrets:
+      CHARMCRAFT_AUTH: ${{ secrets.CHARMCRAFT_AUTH }}
+
