@@ -170,7 +170,7 @@ class SMFOperatorCharm(CharmBase):
         return service.is_running()
 
     def ready_to_configure(self) -> bool:
-        """Returns whether the preconditions are met to proceed with the configuration.
+        """Return whether the preconditions are met to proceed with the configuration.
 
         Returns:
             ready_to_configure: True if all conditions are met else False
@@ -197,7 +197,7 @@ class SMFOperatorCharm(CharmBase):
         return True
 
     def _configure_sdcore_smf(self, event: EventBase) -> None:  # noqa C901
-        """Adds pebble layer and manages Juju unit status.
+        """Add pebble layer and manages Juju unit status.
 
         Args:
             event: Juju event
@@ -246,7 +246,7 @@ class SMFOperatorCharm(CharmBase):
         logger.info("Pushed: %s to workload.", CONFIG_FILE)
 
     def _is_config_update_required(self, content: str) -> bool:
-        """Decides whether config update is required by checking existence and config content.
+        """Decide whether config update is required by checking existence and config content.
 
         Args:
             content (str): desired config file content
@@ -261,7 +261,7 @@ class SMFOperatorCharm(CharmBase):
         return False
 
     def _generate_smf_config_file(self) -> str:
-        """Handles creation of the SMF config file based on a given template.
+        """Handle creation of the SMF config file based on a given template.
 
         Returns:
             content (str): desired config file content
@@ -279,7 +279,7 @@ class SMFOperatorCharm(CharmBase):
         )
 
     def _is_certificate_update_required(self, provider_certificate) -> bool:
-        """Checks the provided certificate and existing certificate.
+        """Check the provided certificate and existing certificate.
 
         Returns True if update is required.
 
@@ -291,11 +291,11 @@ class SMFOperatorCharm(CharmBase):
         return self._get_existing_certificate() != provider_certificate
 
     def _get_existing_certificate(self) -> str:
-        """Returns the existing certificate if present else empty string."""
+        """Return the existing certificate if present else empty string."""
         return self._get_stored_certificate() if self._certificate_is_stored() else ""
 
     def _on_certificates_relation_broken(self, event: EventBase) -> None:
-        """Deletes TLS related artifacts and reconfigures workload."""
+        """Delete TLS related artifacts and reconfigures workload."""
         if not self._container.can_connect():
             event.defer()
             return
@@ -304,7 +304,7 @@ class SMFOperatorCharm(CharmBase):
         self._delete_certificate()
 
     def _get_current_provider_certificate(self) -> str | None:
-        """Compares the current certificate request to what is in the interface.
+        """Compare the current certificate request to what is in the interface.
 
         Returns the current valid provider certificate if present
         """
@@ -315,7 +315,7 @@ class SMFOperatorCharm(CharmBase):
         return None
 
     def _on_certificate_expiring(self, event: CertificateExpiringEvent) -> None:
-        """Requests new certificate."""
+        """Request new certificate."""
         if not self._container.can_connect():
             event.defer()
             return
@@ -325,12 +325,12 @@ class SMFOperatorCharm(CharmBase):
         self._request_new_certificate()
 
     def _generate_private_key(self) -> None:
-        """Generates and stores private key."""
+        """Generate and stores private key."""
         private_key = generate_private_key()
         self._store_private_key(private_key)
 
     def _request_new_certificate(self) -> None:
-        """Generates and stores CSR, and uses it to request a new certificate."""
+        """Generate and stores CSR, and uses it to request a new certificate."""
         private_key = self._get_stored_private_key()
         csr = generate_csr(
             private_key=private_key,
@@ -341,59 +341,59 @@ class SMFOperatorCharm(CharmBase):
         self._certificates.request_certificate_creation(certificate_signing_request=csr)
 
     def _delete_private_key(self) -> None:
-        """Removes private key from workload."""
+        """Remove private key from workload."""
         if not self._private_key_is_stored():
             return
         self._container.remove_path(path=f"{CERTS_DIR_PATH}/{PRIVATE_KEY_NAME}")
         logger.info("Removed private key from workload")
 
     def _delete_csr(self) -> None:
-        """Deletes CSR from workload."""
+        """Delete CSR from workload."""
         if not self._csr_is_stored():
             return
         self._container.remove_path(path=f"{CERTS_DIR_PATH}/{CSR_NAME}")
         logger.info("Removed CSR from workload")
 
     def _delete_certificate(self) -> None:
-        """Deletes certificate from workload."""
+        """Delete certificate from workload."""
         if not self._certificate_is_stored():
             return
         self._container.remove_path(path=f"{CERTS_DIR_PATH}/{CERTIFICATE_NAME}")
         logger.info("Removed certificate from workload")
 
     def _private_key_is_stored(self) -> bool:
-        """Returns whether private key is stored in workload."""
+        """Return whether private key is stored in workload."""
         return self._container.exists(path=f"{CERTS_DIR_PATH}/{PRIVATE_KEY_NAME}")
 
     def _csr_is_stored(self) -> bool:
-        """Returns whether CSR is stored in workload."""
+        """Return whether CSR is stored in workload."""
         return self._container.exists(path=f"{CERTS_DIR_PATH}/{CSR_NAME}")
 
     def _get_stored_certificate(self) -> str:
-        """Returns stored certificate."""
+        """Return stored certificate."""
         return str(self._container.pull(path=f"{CERTS_DIR_PATH}/{CERTIFICATE_NAME}").read())
 
     def _get_stored_csr(self) -> str:
-        """Returns stored CSR."""
+        """Return stored CSR."""
         return str(self._container.pull(path=f"{CERTS_DIR_PATH}/{CSR_NAME}").read())
 
     def _get_stored_private_key(self) -> bytes:
-        """Returns stored private key."""
+        """Return stored private key."""
         return str(
             self._container.pull(path=f"{CERTS_DIR_PATH}/{PRIVATE_KEY_NAME}").read()
         ).encode()
 
     def _certificate_is_stored(self) -> bool:
-        """Returns whether certificate is stored in workload."""
+        """Return whether certificate is stored in workload."""
         return self._container.exists(path=f"{CERTS_DIR_PATH}/{CERTIFICATE_NAME}")
 
     def _store_certificate(self, certificate: str) -> None:
-        """Stores certificate in workload."""
+        """Store certificate in workload."""
         self._container.push(path=f"{CERTS_DIR_PATH}/{CERTIFICATE_NAME}", source=certificate)
         logger.info("Pushed certificate pushed to workload")
 
     def _store_private_key(self, private_key: bytes) -> None:
-        """Stores private key in workload."""
+        """Store private key in workload."""
         self._container.push(
             path=f"{CERTS_DIR_PATH}/{PRIVATE_KEY_NAME}",
             source=private_key.decode(),
@@ -401,12 +401,12 @@ class SMFOperatorCharm(CharmBase):
         logger.info("Pushed private key to workload")
 
     def _store_csr(self, csr: bytes) -> None:
-        """Stores CSR in workload."""
+        """Store CSR in workload."""
         self._container.push(path=f"{CERTS_DIR_PATH}/{CSR_NAME}", source=csr.decode().strip())
         logger.info("Pushed CSR to workload")
 
     def _configure_pebble(self, restart=False) -> None:
-        """Configures the Pebble layer.
+        """Configure the Pebble layer.
 
         Args:
             restart (bool): Whether to restart the SMF container.
@@ -418,7 +418,7 @@ class SMFOperatorCharm(CharmBase):
         self._container.replan()
 
     def _write_ue_config_file(self) -> None:
-        """Writes UE config file to workload."""
+        """Write UE config file to workload."""
         with open(f"src/{UEROUTING_CONFIG_FILE}", "r") as f:
             content = f.read()
 
@@ -428,7 +428,7 @@ class SMFOperatorCharm(CharmBase):
         logger.info("Pushed %s config file to workload", UEROUTING_CONFIG_FILE)
 
     def _relation_created(self, relation_name: str) -> bool:
-        """Returns whether a given Juju relation was crated.
+        """Return whether a given Juju relation was created.
 
         Args:
             relation_name (str): Relation name
@@ -439,7 +439,7 @@ class SMFOperatorCharm(CharmBase):
         return bool(self.model.get_relation(relation_name))
 
     def _storage_is_attached(self) -> bool:
-        """Returns whether storage is attached to the workload container.
+        """Return whether storage is attached to the workload container.
 
         Returns:
             bool: Whether storage is attached.
@@ -447,7 +447,7 @@ class SMFOperatorCharm(CharmBase):
         return self._container.exists(path=BASE_CONFIG_PATH)
 
     def _config_file_is_written(self) -> bool:
-        """Returns whether the config file was written to the workload container.
+        """Return whether the config file was written to the workload container.
 
         Returns:
             bool: Whether the config file was written.
@@ -467,7 +467,7 @@ class SMFOperatorCharm(CharmBase):
         tls_key_path: str,
         tls_certificate_path: str,
     ) -> str:
-        """Renders the config file content.
+        """Render the config file content.
 
         Args:
             database_url (str): Database URL.
@@ -498,7 +498,7 @@ class SMFOperatorCharm(CharmBase):
         )
 
     def _config_file_content_matches(self, content: str) -> bool:
-        """Returns whether the config file content matches the provided content.
+        """Return whether the config file content matches the provided content.
 
         Returns:
             bool: Whether the config file content matches
@@ -507,7 +507,7 @@ class SMFOperatorCharm(CharmBase):
         return existing_content.read() == content
 
     def _ue_config_file_is_written(self) -> bool:
-        """Returns whether the config file was written to the workload container.
+        """Return whether the config file was written to the workload container.
 
         Returns:
             bool: Whether the config file was written.
@@ -515,7 +515,7 @@ class SMFOperatorCharm(CharmBase):
         return bool(self._container.exists(f"{BASE_CONFIG_PATH}/{UEROUTING_CONFIG_FILE}"))
 
     def _nrf_is_available(self) -> bool:
-        """Returns whether the NRF endpoint is available.
+        """Return whether the NRF endpoint is available.
 
         Returns:
             bool: whether the NRF endpoint is available.
@@ -523,7 +523,7 @@ class SMFOperatorCharm(CharmBase):
         return bool(self._nrf_requires.nrf_url)
 
     def _database_is_available(self) -> bool:
-        """Returns whether database relation is available.
+        """Return whether database relation is available.
 
         Returns:
             bool: Whether database relation is available.
@@ -531,7 +531,7 @@ class SMFOperatorCharm(CharmBase):
         return bool(self._database.is_resource_created())
 
     def _get_database_data(self) -> dict:
-        """Returns the database data.
+        """Return the database data.
 
         Returns:
             dict: The database data.
@@ -566,7 +566,7 @@ class SMFOperatorCharm(CharmBase):
 
     @property
     def _environment_variables(self) -> dict:
-        """Returns workload container environment variables.
+        """Return workload container environment variables.
 
         Returns:
             dict: environment variables
@@ -592,7 +592,7 @@ class SMFOperatorCharm(CharmBase):
 
 
 def _get_pod_ip() -> Optional[str]:
-    """Returns the pod IP using juju client.
+    """Return the pod IP using juju client.
 
     Returns:
         str: The pod IP.
