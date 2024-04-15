@@ -10,24 +10,24 @@ on:
 
 jobs:
   check-libraries:
-    uses: canonical/sdcore-github-workflows/.github/workflows/check-libraries.yaml@main
+    uses: canonical/sdcore-github-workflows/.github/workflows/check-libraries.yaml@v0.0.1
     secrets:
       CHARMCRAFT_AUTH: ${{ secrets.CHARMCRAFT_AUTH }}
 
   lint-report:
-    uses: canonical/sdcore-github-workflows/.github/workflows/lint-report.yaml@main
+    uses: canonical/sdcore-github-workflows/.github/workflows/lint-report.yaml@v0.0.1
 
   terraform-check:
-    uses: canonical/sdcore-github-workflows/.github/workflows/terraform.yaml@main
+    uses: canonical/sdcore-github-workflows/.github/workflows/terraform.yaml@v0.0.1
 
   static-analysis:
-    uses: canonical/sdcore-github-workflows/.github/workflows/static-analysis.yaml@main
+    uses: canonical/sdcore-github-workflows/.github/workflows/static-analysis.yaml@v0.0.1
 
   unit-tests-with-coverage:
-    uses: canonical/sdcore-github-workflows/.github/workflows/unit-test.yaml@main
+    uses: canonical/sdcore-github-workflows/.github/workflows/unit-test.yaml@v0.0.1
 
   integration-test:
-    uses: canonical/sdcore-github-workflows/.github/workflows/integration-test.yaml@main
+    uses: canonical/sdcore-github-workflows/.github/workflows/integration-test.yaml@v0.0.1
     with:
       charm-file-name: "sdcore-smf-k8s_ubuntu-22.04-amd64.charm"
 
@@ -39,7 +39,7 @@ jobs:
       - unit-tests-with-coverage
       - integration-test
     if: ${{ github.ref_name == 'main' }}
-    uses: canonical/sdcore-github-workflows/.github/workflows/publish-charm.yaml@main
+    uses: canonical/sdcore-github-workflows/.github/workflows/publish-charm.yaml@v0.0.1
     with:
       charm-file-name: "sdcore-smf-k8s_ubuntu-22.04-amd64.charm"
       track-name: 1.4
@@ -54,7 +54,7 @@ jobs:
       - unit-tests-with-coverage
       - integration-test
     if: ${{ (github.ref_name != 'main') && (github.event_name == 'push') }}
-    uses: canonical/sdcore-github-workflows/.github/workflows/publish-charm.yaml@main
+    uses: canonical/sdcore-github-workflows/.github/workflows/publish-charm.yaml@v0.0.1
     with:
       branch-name: ${{ github.ref_name }}
       charm-file-name: "sdcore-smf-k8s_ubuntu-22.04-amd64.charm"

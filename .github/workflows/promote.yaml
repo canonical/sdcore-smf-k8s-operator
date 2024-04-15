@@ -21,7 +21,7 @@ on:
 jobs:
   promote:
     name: Promote Charm
-    uses: canonical/sdcore-github-workflows/.github/workflows/promote.yaml@main
+    uses: canonical/sdcore-github-workflows/.github/workflows/promote.yaml@v0.0.1
     with:
       promotion: ${{ github.event.inputs.promotion }}
       track-name: ${{ github.event.inputs.track-name }}
