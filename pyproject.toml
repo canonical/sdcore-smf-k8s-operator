@@ -15,6 +15,7 @@ line-length = 99
 [tool.ruff.lint]
 select = ["E", "W", "F", "C", "N", "D", "I001"]
 extend-ignore = [
+    "D107",
     "D203",
     "D204",
     "D213",
@@ -27,7 +28,6 @@ extend-ignore = [
     "D409",
     "D413",
 ]
-ignore = ["E501", "D107"]
 per-file-ignores = {"tests/*" = ["D100","D101","D102","D103","D104"]}
 
 [tool.ruff.lint.mccabe]
