@@ -27,6 +27,7 @@ from ops import ActiveStatus, BlockedStatus, CollectStatusEvent, ModelError, Por
 from ops.charm import CharmBase
 from ops.framework import EventBase
 from ops.main import main
+from ops.pebble import Layer
 
 logger = logging.getLogger(__name__)
 
@@ -411,11 +412,17 @@ class SMFOperatorCharm(CharmBase):
         Args:
             restart (bool): Whether to restart the SMF container.
         """
-        self._container.add_layer("smf", self._pebble_layer, combine=True)
+        plan = self._container.get_plan()
+        if plan.services != self._pebble_layer.services:
+            self._container.add_layer(
+                self._container_name, self._pebble_layer, combine=True
+            )
+            self._container.replan()
+            logger.info("New layer added: %s", self._pebble_layer)
         if restart:
             self._container.restart(self._service_name)
+            logger.info("Restarted container %s", self._service_name)
             return
-        self._container.replan()
 
     def _write_ue_config_file(self) -> None:
         """Write UE config file to workload."""
@@ -544,25 +551,25 @@ class SMFOperatorCharm(CharmBase):
         return self._database.fetch_relation_data()[self._database.relations[0].id]
 
     @property
-    def _pebble_layer(self) -> dict:
+    def _pebble_layer(self) -> Layer:
         """Return a dictionary representing a Pebble layer.
 
         Returns:
             dict: Pebble layer
         """
-        return {
-            "summary": "smf layer",
-            "description": "pebble config layer for smf",
-            "services": {
-                self._service_name: {
-                    "override": "replace",
-                    "startup": "enabled",
-                    "command": f"/bin/smf -smfcfg {BASE_CONFIG_PATH}/{CONFIG_FILE} "
-                    f"-uerouting {BASE_CONFIG_PATH}/{UEROUTING_CONFIG_FILE}",
-                    "environment": self._environment_variables,
-                }
-            },
-        }
+        return Layer(
+            {
+                "services": {
+                    self._service_name: {
+                        "override": "replace",
+                        "startup": "enabled",
+                        "command": f"/bin/smf -smfcfg {BASE_CONFIG_PATH}/{CONFIG_FILE} "
+                        f"-uerouting {BASE_CONFIG_PATH}/{UEROUTING_CONFIG_FILE}",
+                        "environment": self._environment_variables,
+                    }
+                },
+            }
+        )
 
     @property
     def _environment_variables(self) -> dict:
