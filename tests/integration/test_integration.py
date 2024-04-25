@@ -17,9 +17,13 @@ logger = logging.getLogger(__name__)
 METADATA = yaml.safe_load(Path("./metadata.yaml").read_text())
 APP_NAME = METADATA["name"]
 NRF_APP_NAME = "sdcore-nrf-k8s"
+NRF_APP_CHANNEL = "1.4/edge"
 DATABASE_APP_NAME = "mongodb-k8s"
+DATABASE_APP_CHANNEL = "6/beta"
 TLS_PROVIDER_APP_NAME = "self-signed-certificates"
+TLS_PROVIDER_APP_CHANNEL = "latest/stable"
 GRAFANA_AGENT_APP_NAME = "grafana-agent-k8s"
+GRAFANA_AGENT_APP_CHANNEL = "latest/stable"
 
 
 async def _deploy_database(ops_test: OpsTest):
@@ -28,7 +32,7 @@ async def _deploy_database(ops_test: OpsTest):
     await ops_test.model.deploy(
         DATABASE_APP_NAME,
         application_name=DATABASE_APP_NAME,
-        channel="6/beta",
+        channel=DATABASE_APP_CHANNEL,
         trust=True,
     )
 
@@ -39,7 +43,7 @@ async def _deploy_nrf(ops_test: OpsTest):
     await ops_test.model.deploy(
         NRF_APP_NAME,
         application_name=NRF_APP_NAME,
-        channel="edge",
+        channel=NRF_APP_CHANNEL,
         trust=True,
     )
 
@@ -50,7 +54,7 @@ async def _deploy_tls_provider(ops_test: OpsTest):
     await ops_test.model.deploy(
         TLS_PROVIDER_APP_NAME,
         application_name=TLS_PROVIDER_APP_NAME,
-        channel="beta",
+        channel=TLS_PROVIDER_APP_CHANNEL,
     )
 
 
@@ -60,7 +64,7 @@ async def _deploy_grafana_agent(ops_test: OpsTest):
     await ops_test.model.deploy(
         GRAFANA_AGENT_APP_NAME,
         application_name=GRAFANA_AGENT_APP_NAME,
-        channel="stable",
+        channel=GRAFANA_AGENT_APP_CHANNEL,
     )
 
 
@@ -129,12 +133,7 @@ async def test_remove_nrf_and_wait_for_blocked_status(ops_test: OpsTest, build_a
 @pytest.mark.abort_on_fail
 async def test_restore_nrf_and_wait_for_active_status(ops_test: OpsTest, build_and_deploy):
     assert ops_test.model
-    await ops_test.model.deploy(
-        NRF_APP_NAME,
-        application_name=NRF_APP_NAME,
-        channel="edge",
-        trust=True,
-    )
+    await _deploy_nrf(ops_test)
     await ops_test.model.integrate(
         relation1=f"{NRF_APP_NAME}:database", relation2=DATABASE_APP_NAME
     )
@@ -153,12 +152,7 @@ async def test_remove_tls_and_wait_for_blocked_status(ops_test: OpsTest, build_a
 @pytest.mark.abort_on_fail
 async def test_restore_tls_and_wait_for_active_status(ops_test: OpsTest, build_and_deploy):
     assert ops_test.model
-    await ops_test.model.deploy(
-        TLS_PROVIDER_APP_NAME,
-        application_name=TLS_PROVIDER_APP_NAME,
-        channel="beta",
-        trust=True,
-    )
+    await _deploy_tls_provider(ops_test)
     await ops_test.model.integrate(relation1=APP_NAME, relation2=TLS_PROVIDER_APP_NAME)
     await ops_test.model.wait_for_idle(apps=[APP_NAME], status="active", timeout=1000)
 
@@ -197,11 +191,6 @@ async def test_remove_database_and_wait_for_blocked_status(ops_test: OpsTest, bu
 @pytest.mark.abort_on_fail
 async def test_restore_database_and_wait_for_active_status(ops_test: OpsTest, build_and_deploy):
     assert ops_test.model
-    await ops_test.model.deploy(
-        DATABASE_APP_NAME,
-        application_name=DATABASE_APP_NAME,
-        channel="5/edge",
-        trust=True,
-    )
+    await _deploy_database(ops_test)
     await ops_test.model.integrate(relation1=APP_NAME, relation2=DATABASE_APP_NAME)
     await ops_test.model.wait_for_idle(apps=[APP_NAME], status="active", timeout=1000)
