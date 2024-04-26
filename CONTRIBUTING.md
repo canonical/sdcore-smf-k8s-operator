@@ -45,10 +45,14 @@ There are some pre-configured environments
 that can be used for linting and formatting code when you're preparing contributions to the charm:
 
 ```shell
-tox -e lint          # code style
-tox -e static        # static analysis
-tox -e unit          # unit tests
-tox -e integration   # integration tests
+tox -e lint                                             # code style
+tox -e static                                           # static analysis
+tox -e unit                                             # unit tests
+tox -e integration -- --charm_path=PATH_TO_BUILD_CHARM  # integration tests
+```
+
+```note
+Integration tests require the charm to be built with `charmcraft pack` first.
 ```
 
 ## Build
