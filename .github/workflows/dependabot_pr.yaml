@@ -9,4 +9,4 @@ permissions:
 
 jobs:
   auto-merge:
-    uses: canonical/sdcore-github-workflows/.github/workflows/dependabot_pr.yaml@v0.0.1
+    uses: canonical/sdcore-github-workflows/.github/workflows/dependabot_pr.yaml@v1.0.0

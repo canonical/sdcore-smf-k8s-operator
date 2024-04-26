@@ -70,10 +70,10 @@ async def _deploy_grafana_agent(ops_test: OpsTest):
 
 @pytest.fixture(scope="module")
 @pytest.mark.abort_on_fail
-async def build_and_deploy(ops_test: OpsTest):
-    """Build the charm-under-test and deploy it."""
+async def deploy(ops_test: OpsTest, request):
+    """Deploy necessary components."""
     assert ops_test.model
-    charm = await ops_test.build_charm(".")
+    charm = Path(request.config.getoption("--charm_path")).resolve()
     resources = {
         "smf-image": METADATA["resources"]["smf-image"]["upstream-source"],
     }
@@ -91,7 +91,7 @@ async def build_and_deploy(ops_test: OpsTest):
 
 @pytest.mark.abort_on_fail
 async def test_given_charm_is_built_when_deployed_then_status_is_blocked(
-    ops_test: OpsTest, build_and_deploy
+    ops_test: OpsTest, deploy
 ):
     assert ops_test.model
     await ops_test.model.wait_for_idle(
@@ -102,7 +102,7 @@ async def test_given_charm_is_built_when_deployed_then_status_is_blocked(
 
 
 @pytest.mark.abort_on_fail
-async def test_relate_and_wait_for_active_status(ops_test: OpsTest, build_and_deploy):
+async def test_relate_and_wait_for_active_status(ops_test: OpsTest, deploy):
     assert ops_test.model
     await ops_test.model.integrate(
         relation1=f"{NRF_APP_NAME}:database", relation2=f"{DATABASE_APP_NAME}"
@@ -124,14 +124,14 @@ async def test_relate_and_wait_for_active_status(ops_test: OpsTest, build_and_de
 
 
 @pytest.mark.abort_on_fail
-async def test_remove_nrf_and_wait_for_blocked_status(ops_test: OpsTest, build_and_deploy):
+async def test_remove_nrf_and_wait_for_blocked_status(ops_test: OpsTest, deploy):
     assert ops_test.model
     await ops_test.model.remove_application(NRF_APP_NAME, block_until_done=True)
     await ops_test.model.wait_for_idle(apps=[APP_NAME], status="blocked", timeout=60)
 
 
 @pytest.mark.abort_on_fail
-async def test_restore_nrf_and_wait_for_active_status(ops_test: OpsTest, build_and_deploy):
+async def test_restore_nrf_and_wait_for_active_status(ops_test: OpsTest, deploy):
     assert ops_test.model
     await _deploy_nrf(ops_test)
     await ops_test.model.integrate(
@@ -143,14 +143,14 @@ async def test_restore_nrf_and_wait_for_active_status(ops_test: OpsTest, build_a
 
 
 @pytest.mark.abort_on_fail
-async def test_remove_tls_and_wait_for_blocked_status(ops_test: OpsTest, build_and_deploy):
+async def test_remove_tls_and_wait_for_blocked_status(ops_test: OpsTest, deploy):
     assert ops_test.model
     await ops_test.model.remove_application(TLS_PROVIDER_APP_NAME, block_until_done=True)
     await ops_test.model.wait_for_idle(apps=[APP_NAME], status="blocked", timeout=60)
 
 
 @pytest.mark.abort_on_fail
-async def test_restore_tls_and_wait_for_active_status(ops_test: OpsTest, build_and_deploy):
+async def test_restore_tls_and_wait_for_active_status(ops_test: OpsTest, deploy):
     assert ops_test.model
     await _deploy_tls_provider(ops_test)
     await ops_test.model.integrate(relation1=APP_NAME, relation2=TLS_PROVIDER_APP_NAME)
@@ -159,7 +159,7 @@ async def test_restore_tls_and_wait_for_active_status(ops_test: OpsTest, build_a
 
 @pytest.mark.abort_on_fail
 async def test_when_scale_app_beyond_1_then_only_one_unit_is_active(
-    ops_test: OpsTest, build_and_deploy
+    ops_test: OpsTest, deploy
 ):
     assert ops_test.model
     assert isinstance(app := ops_test.model.applications[APP_NAME], Application)
@@ -170,7 +170,7 @@ async def test_when_scale_app_beyond_1_then_only_one_unit_is_active(
     assert unit_statuses.get("blocked") == 2
 
 
-async def test_remove_app(ops_test: OpsTest, build_and_deploy):
+async def test_remove_app(ops_test: OpsTest, deploy):
     assert ops_test.model
     await ops_test.model.remove_application(APP_NAME, block_until_done=True)
 
@@ -179,7 +179,7 @@ async def test_remove_app(ops_test: OpsTest, build_and_deploy):
     reason="Bug in MongoDB: https://github.com/canonical/mongodb-k8s-operator/issues/218"
 )
 @pytest.mark.abort_on_fail
-async def test_remove_database_and_wait_for_blocked_status(ops_test: OpsTest, build_and_deploy):
+async def test_remove_database_and_wait_for_blocked_status(ops_test: OpsTest, deploy):
     assert ops_test.model
     await ops_test.model.remove_application(DATABASE_APP_NAME, block_until_done=True)
     await ops_test.model.wait_for_idle(apps=[APP_NAME], status="blocked", timeout=60)
@@ -189,7 +189,7 @@ async def test_remove_database_and_wait_for_blocked_status(ops_test: OpsTest, bu
     reason="Bug in MongoDB: https://github.com/canonical/mongodb-k8s-operator/issues/218"
 )
 @pytest.mark.abort_on_fail
-async def test_restore_database_and_wait_for_active_status(ops_test: OpsTest, build_and_deploy):
+async def test_restore_database_and_wait_for_active_status(ops_test: OpsTest, deploy):
     assert ops_test.model
     await _deploy_database(ops_test)
     await ops_test.model.integrate(relation1=APP_NAME, relation2=DATABASE_APP_NAME)
