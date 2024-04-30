@@ -20,3 +20,27 @@ updates:
       interval: "daily"
     commit-message:
       prefix: "chore: "
+
+  - package-ecosystem: "github-actions"
+    target-branch: v1.4
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore: "
+
+  - package-ecosystem: "pip"
+    target-branch: v1.4
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore: "
+
+  - package-ecosystem: "terraform"
+    target-branch: v1.4
+    directory: "/terraform/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore: "
