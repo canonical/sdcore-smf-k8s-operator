@@ -7,39 +7,39 @@ on:
 jobs:
   codeql:
     name: CodeQL Analysis
-    uses: canonical/sdcore-github-workflows/.github/workflows/codeql-analysis.yml@v0.0.1
+    uses: canonical/sdcore-github-workflows/.github/workflows/codeql-analysis.yml@v1.0.0
     with:
       branch-name: "v1.4"
 
   lint-report:
-    uses: canonical/sdcore-github-workflows/.github/workflows/lint-report.yaml@v0.0.1
+    uses: canonical/sdcore-github-workflows/.github/workflows/lint-report.yaml@v1.0.0
     with:
       branch-name: "v1.4"
 
   terraform-check:
-    uses: canonical/sdcore-github-workflows/.github/workflows/terraform.yaml@v0.0.1
+    uses: canonical/sdcore-github-workflows/.github/workflows/terraform.yaml@v1.0.0
     with:
       branch-name: "v1.4"
 
   static-analysis:
-    uses: canonical/sdcore-github-workflows/.github/workflows/static-analysis.yaml@v0.0.1
+    uses: canonical/sdcore-github-workflows/.github/workflows/static-analysis.yaml@v1.0.0
     with:
       branch-name: "v1.4"
 
   unit-tests-with-coverage:
-    uses: canonical/sdcore-github-workflows/.github/workflows/unit-test.yaml@v0.0.1
+    uses: canonical/sdcore-github-workflows/.github/workflows/unit-test.yaml@v1.0.0
     with:
       branch-name: "v1.4"
 
   integration-test:
-    uses: canonical/sdcore-github-workflows/.github/workflows/integration-test.yaml@v0.0.1
+    uses: canonical/sdcore-github-workflows/.github/workflows/integration-test.yaml@v1.0.0
     with:
       branch-name: "v1.4"
       charm-file-name: "sdcore-smf-k8s_ubuntu-22.04-amd64.charm"
 
   update-libs:
     name: Update libs
-    uses: canonical/sdcore-github-workflows/.github/workflows/update-libs.yaml@v0.0.1
+    uses: canonical/sdcore-github-workflows/.github/workflows/update-libs.yaml@v1.0.0
     with:
       branch-name: "v1.4"
     secrets: inherit
