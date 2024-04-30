@@ -9,6 +9,10 @@ on:
     - cron: "20 7 * * 0"
 
 jobs:
+  codeql:
+    name: CodeQL Analysis
+    uses: canonical/sdcore-github-workflows/.github/workflows/codeql-analysis.yml@v1.0.0
+
   check-libraries:
     uses: canonical/sdcore-github-workflows/.github/workflows/check-libraries.yaml@v1.0.0
     secrets:
