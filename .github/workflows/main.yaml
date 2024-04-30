@@ -1,14 +1,16 @@
-name: Main branch CI
+name: Release 1.4 CI
 
 on:
   pull_request:
     branches:
       - v1.4
   push:
-  schedule:
-    - cron: "20 7 * * 0"
 
 jobs:
+  codeql:
+    name: CodeQL Analysis
+    uses: canonical/sdcore-github-workflows/.github/workflows/codeql-analysis.yml@v0.0.1
+
   check-libraries:
     uses: canonical/sdcore-github-workflows/.github/workflows/check-libraries.yaml@v0.0.1
     secrets:
