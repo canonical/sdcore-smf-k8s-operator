@@ -2,6 +2,9 @@ name: "Dependabot Auto Approve and Merge"
 
 on:
   pull_request:
+    branches:
+      - main
+      - v1.4
 
 permissions:
   pull-requests: write
