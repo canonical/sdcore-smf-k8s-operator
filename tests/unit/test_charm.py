@@ -40,12 +40,12 @@ class TestCharm(unittest.TestCase):
 
     @staticmethod
     def _get_metadata() -> dict:
-        """Read `metadata.yaml` and returns it as a dictionary.
+        """Read `charmcraft.yaml` and returns it as a dictionary.
 
         Returns:
-            dics: metadata.yaml as a dictionary.
+            dics: charmcraft.yaml as a dictionary.
         """
-        with open("metadata.yaml", "r") as f:
+        with open("charmcraft.yaml", "r") as f:
             data = yaml.safe_load(f)
         return data
 
