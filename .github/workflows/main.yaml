@@ -10,6 +10,8 @@ jobs:
   codeql:
     name: CodeQL Analysis
     uses: canonical/sdcore-github-workflows/.github/workflows/codeql-analysis.yml@v0.0.1
+    with:
+      branch-name: ${{ github.ref }}
 
   check-libraries:
     uses: canonical/sdcore-github-workflows/.github/workflows/check-libraries.yaml@v0.0.1
@@ -18,19 +20,29 @@ jobs:
 
   lint-report:
     uses: canonical/sdcore-github-workflows/.github/workflows/lint-report.yaml@v0.0.1
+    with:
+      branch-name: ${{ github.ref }}
 
   terraform-check:
     uses: canonical/sdcore-github-workflows/.github/workflows/terraform.yaml@v0.0.1
+    with:
+      branch-name: ${{ github.ref }}
+
 
   static-analysis:
     uses: canonical/sdcore-github-workflows/.github/workflows/static-analysis.yaml@v0.0.1
+    with:
+      branch-name: ${{ github.ref }}
 
   unit-tests-with-coverage:
     uses: canonical/sdcore-github-workflows/.github/workflows/unit-test.yaml@v0.0.1
+    with:
+      branch-name: ${{ github.ref }}
 
   integration-test:
     uses: canonical/sdcore-github-workflows/.github/workflows/integration-test.yaml@v0.0.1
     with:
+      branch-name: ${{ github.ref }}
       charm-file-name: "sdcore-smf-k8s_ubuntu-22.04-amd64.charm"
 
   publish-charm:
@@ -43,6 +55,7 @@ jobs:
     if: ${{ github.ref_name == 'v1.4' }}
     uses: canonical/sdcore-github-workflows/.github/workflows/publish-charm.yaml@v0.0.1
     with:
+      branch-name: ${{ github.ref_name }}
       charm-file-name: "sdcore-smf-k8s_ubuntu-22.04-amd64.charm"
       track-name: 1.4
     secrets:
