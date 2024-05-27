@@ -20,7 +20,7 @@ cffi==1.16.0
     #   pynacl
 charset-normalizer==3.3.2
     # via requests
-codespell==2.2.6
+codespell==2.3.0
     # via -r test-requirements.in
 coverage[toml]==7.5.2
     # via -r test-requirements.in
