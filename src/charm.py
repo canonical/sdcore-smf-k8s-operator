@@ -47,7 +47,7 @@ LOGGING_RELATION_NAME = "logging"
 
 
 class SMFOperatorCharm(CharmBase):
-    """Charm the service."""
+    """Main class to describe juju event handling for the SD-Core SMF operator for K8s."""
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -96,6 +96,45 @@ class SMFOperatorCharm(CharmBase):
         self.framework.observe(
             self._certificates.on.certificate_expiring, self._on_certificate_expiring
         )
+
+    def _configure_sdcore_smf(self, event: EventBase) -> None:  # noqa C901
+        """Configure the Pebble layer for Juju events.
+
+        Whenever a Juju event is emitted, this method performs a couple of checks to make sure that
+        the workload is ready to be started. Then, it configures the SMF workload,
+        and runs the Pebble services.
+
+        Args:
+            event (EventBase): Juju event
+        """
+        if not self.ready_to_configure():
+            logger.info("The preconditions for the configuration are not met yet.")
+            return
+
+        if not self._ue_config_file_is_written():
+            self._write_ue_config_file()
+
+        if not self._private_key_is_stored():
+            self._generate_private_key()
+
+        if not self._csr_is_stored():
+            self._request_new_certificate()
+
+        provider_certificate = self._get_current_provider_certificate()
+        if not provider_certificate:
+            return
+
+        if certificate_update_required := self._is_certificate_update_required(
+            provider_certificate
+        ):
+            self._store_certificate(certificate=provider_certificate)
+
+        desired_config_file = self._generate_smf_config_file()
+        if config_update_required := self._is_config_update_required(desired_config_file):
+            self._push_config_file(content=desired_config_file)
+
+        should_restart = config_update_required or certificate_update_required
+        self._configure_pebble(restart=should_restart)
 
     def _on_collect_unit_status(self, event: CollectStatusEvent):  # noqa C901
         """Check the unit status and set to Unit when CollectStatusEvent is fired.
@@ -196,41 +235,6 @@ class SMFOperatorCharm(CharmBase):
             return False
 
         return True
-
-    def _configure_sdcore_smf(self, event: EventBase) -> None:  # noqa C901
-        """Add pebble layer and manages Juju unit status.
-
-        Args:
-            event: Juju event
-        """
-        if not self.ready_to_configure():
-            logger.info("The preconditions for the configuration are not met yet.")
-            return
-
-        if not self._ue_config_file_is_written():
-            self._write_ue_config_file()
-
-        if not self._private_key_is_stored():
-            self._generate_private_key()
-
-        if not self._csr_is_stored():
-            self._request_new_certificate()
-
-        provider_certificate = self._get_current_provider_certificate()
-        if not provider_certificate:
-            return
-
-        if certificate_update_required := self._is_certificate_update_required(
-            provider_certificate
-        ):
-            self._store_certificate(certificate=provider_certificate)
-
-        desired_config_file = self._generate_smf_config_file()
-        if config_update_required := self._is_config_update_required(desired_config_file):
-            self._push_config_file(content=desired_config_file)
-
-        should_restart = config_update_required or certificate_update_required
-        self._configure_pebble(restart=should_restart)
 
     def _push_config_file(
         self,
@@ -407,7 +411,11 @@ class SMFOperatorCharm(CharmBase):
         logger.info("Pushed CSR to workload")
 
     def _configure_pebble(self, restart=False) -> None:
-        """Configure the Pebble layer.
+        """Configure and restart the workload if required.
+
+        This method detects the changes between the Pebble layer and the Pebble services.
+        If a change is detected, it applies the desired configuration.
+        Then, it restarts the workload if a restart is required.
 
         Args:
             restart (bool): Whether to restart the SMF container.
@@ -446,12 +454,9 @@ class SMFOperatorCharm(CharmBase):
         return bool(self.model.get_relation(relation_name))
 
     def _storage_is_attached(self) -> bool:
-        """Return whether storage is attached to the workload container.
-
-        Returns:
-            bool: Whether storage is attached.
-        """
-        return self._container.exists(path=BASE_CONFIG_PATH)
+        return self._container.exists(path=BASE_CONFIG_PATH) and self._container.exists(
+            path=CERTS_DIR_PATH
+        )
 
     def _config_file_is_written(self) -> bool:
         """Return whether the config file was written to the workload container.
