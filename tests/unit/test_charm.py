@@ -21,7 +21,6 @@ DATABASE_USERNAME = "rock"
 DATABASE_PASSWORD = "paper"
 DB_APPLICATION_NAME = "mongodb-k8s"
 DB_RELATION_NAME = "database"
-NRF_APPLICATION_NAME = "nrf"
 NRF_RELATION_NAME = "fiveg_nrf"
 TLS_APPLICATION_NAME = "tls-certificates-operator"
 TLS_RELATION_NAME = "certificates"
@@ -136,10 +135,10 @@ class TestCharm:
     @pytest.fixture()
     def certificates_relation_id(self) -> Generator[int, None, None]:
         relation_id = self.harness.add_relation(  # type:ignore
-            relation_name=TLS_RELATION_NAME, remote_app="tls-certificates-operator"
+            relation_name=TLS_RELATION_NAME, remote_app=TLS_APPLICATION_NAME
         )
         self.harness.add_relation_unit(  # type:ignore
-            relation_id=relation_id, remote_unit_name="tls-certificates-operator/0"
+            relation_id=relation_id, remote_unit_name=f"{TLS_APPLICATION_NAME}0"
         )
         yield relation_id
 
@@ -213,12 +212,10 @@ class TestCharm:
     def test_given_smf_charm_in_active_status_when_nrf_relation_breaks_then_status_is_blocked(
         self, add_storage, mock_default_values, nrf_relation_id, certificates_relation_id
     ):
-        certificate = "Whatever certificate content"
         root = self.harness.get_filesystem_root(self.container_name)
-        (root / CERTIFICATE_PATH).write_text(certificate)
+        (root / CERTIFICATE_PATH).write_text(CERTIFICATE)
         (root / UE_CONFIG_FILE_PATH).write_text(self._read_file(EXPECTED_UE_CONFIG_FILE_PATH))
         self._create_database_relation_and_populate_data()
-        self.harness.set_can_connect(container=self.container_name, val=True)
         self.harness.container_pebble_ready(self.container_name)
 
         self.harness.remove_relation(nrf_relation_id)
@@ -228,12 +225,10 @@ class TestCharm:
     def test_given_smf_charm_in_active_status_when_database_relation_breaks_then_status_is_blocked(
         self, add_storage, mock_default_values, nrf_relation_id, certificates_relation_id
     ):
-        certificate = "Whatever certificate content"
         root = self.harness.get_filesystem_root(self.container_name)
-        (root / CERTIFICATE_PATH).write_text(certificate)
+        (root / CERTIFICATE_PATH).write_text(CERTIFICATE)
         (root / UE_CONFIG_FILE_PATH).write_text(self._read_file(EXPECTED_UE_CONFIG_FILE_PATH))
         database_relation_id = self._create_database_relation_and_populate_data()
-        self.harness.set_can_connect(container=self.container_name, val=True)
         self.harness.container_pebble_ready(self.container_name)
 
         self.harness.remove_relation(database_relation_id)
@@ -282,7 +277,7 @@ class TestCharm:
             "config",
         ]
     )
-    def test_config_storage_is_not_attached_when_configure_sdcore_smf_is_called_then_status_is_waiting(  # noqa: E501
+    def test_storage_is_not_attached_when_configure_sdcore_smf_is_called_then_status_is_waiting(  # noqa: E501
         self, nrf_relation_id, certificates_relation_id, storage_name
     ):
         self._create_database_relation_and_populate_data()
@@ -325,9 +320,6 @@ class TestCharm:
         (root / CERTIFICATE_PATH).write_text(CERTIFICATE)
         (root / CSR_PATH).write_text(CSR)
         (root / UE_CONFIG_FILE_PATH).write_text(self._read_file(EXPECTED_UE_CONFIG_FILE_PATH))
-        pod_ip = "1.1.1.1"
-        self.mock_check_output.return_value = pod_ip.encode()
-        self.harness.set_can_connect(container=self.container_name, val=True)
         self._create_database_relation_and_populate_data()
 
         self.harness.container_pebble_ready(self.container_name)
@@ -353,16 +345,13 @@ class TestCharm:
     def test_given_config_file_exists_and_is_not_changed_when_configure_smf_then_config_file_is_not_re_written_with_same_content(  # noqa: E501
         self, add_storage, mock_default_values, nrf_relation_id, certificates_relation_id
     ):
-        certificate = "Whatever certificate content"
         root = self.harness.get_filesystem_root(self.container_name)
-        (root / CERTIFICATE_PATH).write_text(certificate)
+        (root / CERTIFICATE_PATH).write_text(CERTIFICATE)
         (root / UE_CONFIG_FILE_PATH).write_text(self._read_file(EXPECTED_UE_CONFIG_FILE_PATH))
         (root / CONFIG_FILE_PATH).write_text(
             self._read_file(EXPECTED_CONFIG_FILE_PATH)
         )
         config_modification_time = (root / CONFIG_FILE_PATH).stat().st_mtime
-        pod_ip = "1.1.1.1"
-        self.mock_check_output.return_value = pod_ip.encode()
         self._create_database_relation_and_populate_data()
         self.harness.set_can_connect(container=self.container_name, val=True)
 
@@ -380,7 +369,6 @@ class TestCharm:
         (root / CONFIG_FILE_PATH).write_text("super different config file content")
         self._create_database_relation_and_populate_data()
         self.mock_get_assigned_certificates.return_value = [self._get_provider_certificate()]
-        self.harness.set_can_connect(container=self.container_name, val=True)
         self.harness.container_pebble_ready(self.container_name)
 
         assert (root / CONFIG_FILE_PATH).read_text() == self._read_file(EXPECTED_CONFIG_FILE_PATH)
@@ -395,7 +383,6 @@ class TestCharm:
 
         self._create_database_relation_and_populate_data()
         self.mock_get_assigned_certificates.return_value = [self._get_provider_certificate()]
-        self.harness.set_can_connect(container=self.container_name, val=True)
         self.harness.container_pebble_ready(self.container_name)
 
         expected_plan = {
@@ -495,7 +482,6 @@ class TestCharm:
         self._create_database_relation_and_populate_data()
 
         self.mock_get_assigned_certificates.return_value = [self._get_provider_certificate()]
-        self.harness.set_can_connect(container=self.container_name, val=True)
         self.harness.container_pebble_ready(self.container_name)
 
         assert (root / CERTIFICATE_PATH).read_text() == CERTIFICATE
@@ -507,7 +493,6 @@ class TestCharm:
         root = self.harness.get_filesystem_root(self.container_name)
         (root / PRIVATE_KEY_PATH).write_text(PRIVATE_KEY)
         (root / CSR_PATH).write_text(CSR)
-        self.harness.set_can_connect(container=self.container_name, val=True)
 
         provider_certificate = Mock(ProviderCertificate)
         provider_certificate.certificate = CERTIFICATE
@@ -524,8 +509,7 @@ class TestCharm:
     ):
         self.harness.add_storage("certs", attach=True)
         root = self.harness.get_filesystem_root(self.container_name)
-        certificate = "Stored certificate content"
-        (root / CERTIFICATE_PATH).write_text(certificate)
+        (root / CERTIFICATE_PATH).write_text(CERTIFICATE)
         event = Mock()
         event.certificate = "Relation certificate content (different from stored)"
         csr = b"whatever csr content"
