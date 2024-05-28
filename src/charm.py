@@ -101,7 +101,7 @@ class SMFOperatorCharm(CharmBase):
         """Configure the Pebble layer for Juju events.
 
         Whenever a Juju event is emitted, this method performs a couple of checks to make sure that
-        the workload is ready to be started. Then, it configures the Webui workload,
+        the workload is ready to be started. Then, it configures the SMF workload,
         and runs the Pebble services.
 
         Args:
