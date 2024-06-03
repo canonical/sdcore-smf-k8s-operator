@@ -1,6 +1,6 @@
 codespell
 coverage[toml]
-juju==3.4.0.0
+juju==3.5.0.0
 macaroonbakery==1.3.4  # https://protobuf.dev/news/2022-05-06/#python-updates
 mypy
 pytest
