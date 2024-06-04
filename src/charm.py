@@ -8,7 +8,7 @@
 import logging
 from ipaddress import IPv4Address
 from subprocess import check_output
-from typing import Optional
+from typing import List, Optional
 
 from charms.data_platform_libs.v0.data_interfaces import DatabaseRequires  # type: ignore[import]
 from charms.loki_k8s.v1.loki_push_api import LogForwarder  # type: ignore[import]
@@ -16,6 +16,9 @@ from charms.prometheus_k8s.v0.prometheus_scrape import (  # type: ignore[import]
     MetricsEndpointProvider,
 )
 from charms.sdcore_nrf_k8s.v0.fiveg_nrf import NRFRequires  # type: ignore[import]
+from charms.sdcore_webui_k8s.v0.sdcore_config import (  # type: ignore[import]
+    SdcoreConfigRequires,
+)
 from charms.tls_certificates_interface.v3.tls_certificates import (  # type: ignore[import]
     CertificateExpiringEvent,
     TLSCertificatesRequiresV3,
@@ -44,6 +47,10 @@ CSR_NAME = "smf.csr"
 CERTIFICATE_NAME = "smf.pem"
 CERTIFICATE_COMMON_NAME = "smf.sdcore"
 LOGGING_RELATION_NAME = "logging"
+FIVEG_NRF_RELATION_NAME = "fiveg_nrf"
+SDCORE_CONFIG_RELATION_NAME = "sdcore_config"
+TLS_RELATION_NAME = "certificates"
+DATABASE_RELATION_NAME = "database"
 
 
 class SMFOperatorCharm(CharmBase):
@@ -61,9 +68,12 @@ class SMFOperatorCharm(CharmBase):
             return
         self._container_name = self._service_name = "smf"
         self._container = self.unit.get_container(self._container_name)
-        self._nrf_requires = NRFRequires(charm=self, relation_name="fiveg_nrf")
+        self._nrf_requires = NRFRequires(charm=self, relation_name=FIVEG_NRF_RELATION_NAME)
+        self._webui_requires = SdcoreConfigRequires(
+            charm=self, relation_name=SDCORE_CONFIG_RELATION_NAME
+        )
         self._database = DatabaseRequires(
-            self, relation_name="database", database_name=DATABASE_NAME
+            self, relation_name=DATABASE_RELATION_NAME, database_name=DATABASE_NAME
         )
         self._logging = LogForwarder(charm=self, relation_name=LOGGING_RELATION_NAME)
         self.unit.set_ports(
@@ -79,13 +89,18 @@ class SMFOperatorCharm(CharmBase):
                 }
             ],
         )
-        self._certificates = TLSCertificatesRequiresV3(self, "certificates")
+        self._certificates = TLSCertificatesRequiresV3(self, TLS_RELATION_NAME)
         self.framework.observe(self.on.update_status, self._configure_sdcore_smf)
         self.framework.observe(self.on.smf_pebble_ready, self._configure_sdcore_smf)
         self.framework.observe(self.on.database_relation_joined, self._configure_sdcore_smf)
         self.framework.observe(self._database.on.database_created, self._configure_sdcore_smf)
         self.framework.observe(self.on.fiveg_nrf_relation_joined, self._configure_sdcore_smf)
         self.framework.observe(self._nrf_requires.on.nrf_available, self._configure_sdcore_smf)
+        self.framework.observe(
+            self._webui_requires.on.webui_url_available,
+            self._configure_sdcore_smf,
+        )
+        self.framework.observe(self.on.sdcore_config_relation_joined, self._configure_sdcore_smf)
         self.framework.observe(self.on.certificates_relation_joined, self._configure_sdcore_smf)
         self.framework.observe(
             self.on.certificates_relation_broken, self._on_certificates_relation_broken
@@ -97,12 +112,13 @@ class SMFOperatorCharm(CharmBase):
             self._certificates.on.certificate_expiring, self._on_certificate_expiring
         )
 
-    def _configure_sdcore_smf(self, event: EventBase) -> None:  # noqa C901
-        """Configure the Pebble layer for Juju events.
+    def _configure_sdcore_smf(self, event: EventBase) -> None:
+        """Handle Juju events.
 
-        Whenever a Juju event is emitted, this method performs a couple of checks to make sure that
-        the workload is ready to be started. Then, it configures the SMF workload,
-        and runs the Pebble services.
+        This event handler is called for every event that affects the charm state
+        (ex. configuration files, relation data). This method performs a couple of checks
+        to make sure that the workload is ready to be started. Then, it configures the AMF
+        workload and runs the Pebble services.
 
         Args:
             event (EventBase): Juju event
@@ -152,11 +168,12 @@ class SMFOperatorCharm(CharmBase):
             logger.info("Scaling is not implemented for this charm")
             return
 
-        for relation in ["database", "fiveg_nrf", "certificates"]:
-            if not self._relation_created(relation):
-                event.add_status(BlockedStatus(f"Waiting for {relation} relation"))
-                logger.info(f"Waiting for {relation} relation")
-                return
+        if missing_relations := self._missing_relations():
+            event.add_status(
+                BlockedStatus(f"Waiting for {', '.join(missing_relations)} relation(s)")
+            )
+            logger.info("Waiting for %s  relation(s)", ', '.join(missing_relations))
+            return
 
         if not self._container.can_connect():
             event.add_status(WaitingStatus("Waiting for container to be ready"))
@@ -171,6 +188,11 @@ class SMFOperatorCharm(CharmBase):
         if not self._nrf_is_available():
             event.add_status(WaitingStatus("Waiting for NRF relation to be available"))
             logger.info("Waiting for NRF relation to be available")
+            return
+
+        if not self._webui_requires.webui_url:
+            event.add_status(WaitingStatus("Waiting for Webui data to be available"))
+            logger.info("Waiting for Webui data to be available")
             return
 
         if not self._storage_is_attached():
@@ -218,14 +240,16 @@ class SMFOperatorCharm(CharmBase):
         if not self._container.can_connect():
             return False
 
-        for relation in ["database", "fiveg_nrf", "certificates"]:
-            if not self._relation_created(relation):
-                return False
+        if self._missing_relations():
+            return False
 
         if not self._database_is_available():
             return False
 
         if not self._nrf_is_available():
+            return False
+
+        if not self._webui_requires.webui_url:
             return False
 
         if not self._storage_is_attached():
@@ -235,6 +259,23 @@ class SMFOperatorCharm(CharmBase):
             return False
 
         return True
+
+    def _missing_relations(self) -> List[str]:
+        """Return list of missing relations.
+
+        If all the relations are created, it returns an empty list.
+
+        Returns:
+            list: missing relation names.
+        """
+        missing_relations = []
+        for relation in [FIVEG_NRF_RELATION_NAME,
+                         DATABASE_RELATION_NAME,
+                         TLS_RELATION_NAME,
+                         SDCORE_CONFIG_RELATION_NAME]:
+            if not self._relation_created(relation):
+                missing_relations.append(relation)
+        return missing_relations
 
     def _push_config_file(
         self,
@@ -281,6 +322,7 @@ class SMFOperatorCharm(CharmBase):
             scheme="https",
             tls_key_path=f"{CERTS_DIR_PATH}/{PRIVATE_KEY_NAME}",
             tls_certificate_path=f"{CERTS_DIR_PATH}/{CERTIFICATE_NAME}",
+            webui_uri=self._webui_requires.webui_url,
         )
 
     def _is_certificate_update_required(self, provider_certificate) -> bool:
@@ -478,6 +520,7 @@ class SMFOperatorCharm(CharmBase):
         scheme: str,
         tls_key_path: str,
         tls_certificate_path: str,
+        webui_uri: str,
     ) -> str:
         """Render the config file content.
 
@@ -491,6 +534,7 @@ class SMFOperatorCharm(CharmBase):
             scheme (str): SBI Interface scheme ("http" or "https")
             tls_key_path (str): Path to the TLS private key
             tls_certificate_path (str): Path to the TLS certificate path
+            webui_uri (str) : URL of the Webui.
 
         Returns:
             str: Config file content.
@@ -507,6 +551,7 @@ class SMFOperatorCharm(CharmBase):
             scheme=scheme,
             tls_key_path=tls_key_path,
             tls_certificate_path=tls_certificate_path,
+            webui_uri=webui_uri,
         )
 
     def _config_file_content_matches(self, content: str) -> bool:

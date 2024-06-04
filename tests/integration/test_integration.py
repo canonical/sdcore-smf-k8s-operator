@@ -24,6 +24,9 @@ TLS_PROVIDER_APP_NAME = "self-signed-certificates"
 TLS_PROVIDER_APP_CHANNEL = "latest/stable"
 GRAFANA_AGENT_APP_NAME = "grafana-agent-k8s"
 GRAFANA_AGENT_APP_CHANNEL = "latest/stable"
+WEBUI_CHARM_NAME = "sdcore-webui-k8s"
+WEBUI_CHARM_CHANNEL = "1.5/edge"
+TIMEOUT = 1000
 
 
 async def _deploy_database(ops_test: OpsTest):
@@ -68,6 +71,15 @@ async def _deploy_grafana_agent(ops_test: OpsTest):
     )
 
 
+async def _deploy_webui(ops_test: OpsTest):
+    assert ops_test.model
+    await ops_test.model.deploy(
+        WEBUI_CHARM_NAME,
+        application_name=WEBUI_CHARM_NAME,
+        channel=WEBUI_CHARM_CHANNEL,
+    )
+
+
 @pytest.fixture(scope="module")
 @pytest.mark.abort_on_fail
 async def deploy(ops_test: OpsTest, request):
@@ -86,6 +98,7 @@ async def deploy(ops_test: OpsTest, request):
     await _deploy_database(ops_test)
     await _deploy_nrf(ops_test)
     await _deploy_tls_provider(ops_test)
+    await _deploy_webui(ops_test)
     await _deploy_grafana_agent(ops_test)
 
 
@@ -110,9 +123,18 @@ async def test_relate_and_wait_for_active_status(ops_test: OpsTest, deploy):
     await ops_test.model.integrate(
         relation1=f"{APP_NAME}:database", relation2=f"{DATABASE_APP_NAME}"
     )
+    await ops_test.model.integrate(
+        relation1=f"{WEBUI_CHARM_NAME}:common_database", relation2=f"{DATABASE_APP_NAME}"
+    )
+    await ops_test.model.integrate(
+        relation1=f"{WEBUI_CHARM_NAME}:auth_database", relation2=f"{DATABASE_APP_NAME}"
+    )
     await ops_test.model.integrate(relation1=NRF_APP_NAME, relation2=TLS_PROVIDER_APP_NAME)
     await ops_test.model.integrate(relation1=APP_NAME, relation2=NRF_APP_NAME)
     await ops_test.model.integrate(relation1=APP_NAME, relation2=TLS_PROVIDER_APP_NAME)
+    await ops_test.model.integrate(
+        relation1=f"{APP_NAME}:sdcore_config", relation2=f"{WEBUI_CHARM_NAME}:sdcore-config"
+    )
     await ops_test.model.integrate(
         relation1=f"{APP_NAME}:logging", relation2=GRAFANA_AGENT_APP_NAME
     )
@@ -139,7 +161,7 @@ async def test_restore_nrf_and_wait_for_active_status(ops_test: OpsTest, deploy)
     )
     await ops_test.model.integrate(relation1=NRF_APP_NAME, relation2=TLS_PROVIDER_APP_NAME)
     await ops_test.model.integrate(relation1=APP_NAME, relation2=NRF_APP_NAME)
-    await ops_test.model.wait_for_idle(apps=[APP_NAME], status="active", timeout=1000)
+    await ops_test.model.wait_for_idle(apps=[APP_NAME], status="active", timeout=TIMEOUT)
 
 
 @pytest.mark.abort_on_fail
@@ -154,7 +176,30 @@ async def test_restore_tls_and_wait_for_active_status(ops_test: OpsTest, deploy)
     assert ops_test.model
     await _deploy_tls_provider(ops_test)
     await ops_test.model.integrate(relation1=APP_NAME, relation2=TLS_PROVIDER_APP_NAME)
-    await ops_test.model.wait_for_idle(apps=[APP_NAME], status="active", timeout=1000)
+    await ops_test.model.wait_for_idle(apps=[APP_NAME], status="active", timeout=TIMEOUT)
+
+
+@pytest.mark.abort_on_fail
+async def test_remove_webui_and_wait_for_blocked_status(ops_test: OpsTest, deploy):
+    assert ops_test.model
+    await ops_test.model.remove_application(WEBUI_CHARM_NAME, block_until_done=True)
+    await ops_test.model.wait_for_idle(apps=[APP_NAME], status="blocked", timeout=60)
+
+
+@pytest.mark.abort_on_fail
+async def test_restore_webui_and_wait_for_active_status(ops_test: OpsTest, deploy):
+    assert ops_test.model
+    await _deploy_webui(ops_test)
+    await ops_test.model.integrate(
+        relation1=f"{WEBUI_CHARM_NAME}:common_database", relation2=f"{DATABASE_APP_NAME}"
+    )
+    await ops_test.model.integrate(
+        relation1=f"{WEBUI_CHARM_NAME}:auth_database", relation2=f"{DATABASE_APP_NAME}"
+    )
+    await ops_test.model.integrate(
+        relation1=f"{APP_NAME}:sdcore_config", relation2=f"{WEBUI_CHARM_NAME}:sdcore-config"
+    )
+    await ops_test.model.wait_for_idle(apps=[APP_NAME], status="active", timeout=TIMEOUT)
 
 
 @pytest.mark.abort_on_fail
@@ -193,4 +238,4 @@ async def test_restore_database_and_wait_for_active_status(ops_test: OpsTest, de
     assert ops_test.model
     await _deploy_database(ops_test)
     await ops_test.model.integrate(relation1=APP_NAME, relation2=DATABASE_APP_NAME)
-    await ops_test.model.wait_for_idle(apps=[APP_NAME], status="active", timeout=1000)
+    await ops_test.model.wait_for_idle(apps=[APP_NAME], status="active", timeout=TIMEOUT)
