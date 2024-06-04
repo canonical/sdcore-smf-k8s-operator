@@ -89,7 +89,7 @@ class SMFOperatorCharm(CharmBase):
                 }
             ],
         )
-        self._certificates = TLSCertificatesRequiresV3(self, DATABASE_RELATION_NAME)
+        self._certificates = TLSCertificatesRequiresV3(self, TLS_RELATION_NAME)
         self.framework.observe(self.on.update_status, self._configure_sdcore_smf)
         self.framework.observe(self.on.smf_pebble_ready, self._configure_sdcore_smf)
         self.framework.observe(self.on.database_relation_joined, self._configure_sdcore_smf)
