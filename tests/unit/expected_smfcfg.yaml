@@ -10,6 +10,7 @@ info:
 
 configuration:
   smfDBName: sdcore_smf
+  webuiUri: sdcore-webui:9876
   enableDBStore: false
   enableUPFAdapter: false
   debugProfilePort: 5001
