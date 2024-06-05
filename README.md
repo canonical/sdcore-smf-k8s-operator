@@ -16,6 +16,7 @@ juju integrate sdcore-webui-k8s:auth_database mongodb-k8s:database
 juju integrate sdcore-smf-k8s:default-database mongodb-k8s
 juju integrate sdcore-smf-k8s:smf-database mongodb-k8s
 juju integrate sdcore-nrf-k8s:certificates self-signed-certificates:certificates
+juju integrate sdcore-nrf-k8s:sdcore_config sdcore-webui-k8s:sdcore-config
 juju integrate sdcore-smf-k8s:fiveg_nrf sdcore-nrf-k8s:fiveg_nrf
 juju integrate sdcore-smf-k8s:certificates self-signed-certificates:certificates
 juju integrate sdcore-smf-k8s:sdcore_config sdcore-webui-k8s:sdcore-config
