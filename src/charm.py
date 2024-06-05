@@ -117,7 +117,7 @@ class SMFOperatorCharm(CharmBase):
 
         This event handler is called for every event that affects the charm state
         (ex. configuration files, relation data). This method performs a couple of checks
-        to make sure that the workload is ready to be started. Then, it configures the AMF
+        to make sure that the workload is ready to be started. Then, it configures the SMF
         workload and runs the Pebble services.
 
         Args:
@@ -190,7 +190,7 @@ class SMFOperatorCharm(CharmBase):
             logger.info("Waiting for NRF relation to be available")
             return
 
-        if not self._webui_requires.webui_url:
+        if not self._webui_data_is_available:
             event.add_status(WaitingStatus("Waiting for Webui data to be available"))
             logger.info("Waiting for Webui data to be available")
             return
@@ -249,7 +249,7 @@ class SMFOperatorCharm(CharmBase):
         if not self._nrf_is_available():
             return False
 
-        if not self._webui_requires.webui_url:
+        if not self._webui_data_is_available:
             return False
 
         if not self._storage_is_attached():
@@ -276,6 +276,10 @@ class SMFOperatorCharm(CharmBase):
             if not self._relation_created(relation):
                 missing_relations.append(relation)
         return missing_relations
+
+    @property
+    def _webui_data_is_available(self) -> bool:
+        return bool(self._webui_requires.webui_url)
 
     def _push_config_file(
         self,
