@@ -34,3 +34,9 @@ output "metrics_endpoint" {
   description = "Name of the endpoint to provide `prometheus_scrape` interface."
   value       = "metrics-endpoint"
 }
+
+output "sdcore_config_endpoint" {
+  description = "Name of the endpoint used to integrate with the Webui."
+  value       = "sdcore_config"
+}
+
