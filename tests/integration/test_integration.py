@@ -81,7 +81,6 @@ async def _deploy_webui(ops_test: OpsTest):
 
 
 @pytest.fixture(scope="module")
-@pytest.mark.abort_on_fail
 async def deploy(ops_test: OpsTest, request):
     """Deploy necessary components."""
     assert ops_test.model
@@ -130,6 +129,7 @@ async def test_relate_and_wait_for_active_status(ops_test: OpsTest, deploy):
         relation1=f"{WEBUI_CHARM_NAME}:auth_database", relation2=f"{DATABASE_APP_NAME}"
     )
     await ops_test.model.integrate(relation1=NRF_APP_NAME, relation2=TLS_PROVIDER_APP_NAME)
+    await ops_test.model.integrate(relation1=NRF_APP_NAME, relation2=WEBUI_CHARM_NAME)
     await ops_test.model.integrate(relation1=APP_NAME, relation2=NRF_APP_NAME)
     await ops_test.model.integrate(relation1=APP_NAME, relation2=TLS_PROVIDER_APP_NAME)
     await ops_test.model.integrate(
@@ -160,6 +160,7 @@ async def test_restore_nrf_and_wait_for_active_status(ops_test: OpsTest, deploy)
         relation1=f"{NRF_APP_NAME}:database", relation2=DATABASE_APP_NAME
     )
     await ops_test.model.integrate(relation1=NRF_APP_NAME, relation2=TLS_PROVIDER_APP_NAME)
+    await ops_test.model.integrate(relation1=NRF_APP_NAME, relation2=WEBUI_CHARM_NAME)
     await ops_test.model.integrate(relation1=APP_NAME, relation2=NRF_APP_NAME)
     await ops_test.model.wait_for_idle(apps=[APP_NAME], status="active", timeout=TIMEOUT)
 
