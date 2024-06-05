@@ -24,5 +24,5 @@ juju integrate sdcore-smf-k8s:sdcore_config sdcore-webui-k8s:sdcore-config
 
 # Image
 
-**smf**: `ghcr.io/canonical/sdcore-smf:1.4.0`
+**smf**: `ghcr.io/canonical/sdcore-smf:1.4.2`
 
