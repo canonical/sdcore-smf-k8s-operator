@@ -3,23 +3,35 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
     commit-message:
       prefix: "chore: "
+    groups:
+      github_actions:
+        patterns:
+          - "*"
 
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
     commit-message:
       prefix: "chore: "
+    groups:
+      pip_dependencies:
+        patterns:
+          - "*"
 
   - package-ecosystem: "terraform"
     directory: "/terraform/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
     commit-message:
       prefix: "chore: "
+    groups:
+      terraform_modules:
+        patterns:
+          - "*"
 
   - package-ecosystem: "github-actions"
     target-branch: v1.4
