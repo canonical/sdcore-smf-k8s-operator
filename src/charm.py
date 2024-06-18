@@ -169,19 +169,19 @@ class SMFOperatorCharm(CharmBase):
             logger.info("Scaling is not implemented for this charm")
             return
 
-        if not self._container.can_connect():
-            event.add_status(WaitingStatus("Waiting for container to be ready"))
-            logger.info("Waiting for container to be ready")
-            return
-
-        self.unit.set_workload_version(self._get_workload_version())
-
         if missing_relations := self._missing_relations():
             event.add_status(
                 BlockedStatus(f"Waiting for {', '.join(missing_relations)} relation(s)")
             )
             logger.info("Waiting for %s  relation(s)", ", ".join(missing_relations))
             return
+
+        if not self._container.can_connect():
+            event.add_status(WaitingStatus("Waiting for container to be ready"))
+            logger.info("Waiting for container to be ready")
+            return
+
+        self.unit.set_workload_version(self._get_workload_version())
 
         if not self._database_is_available():
             event.add_status(WaitingStatus("Waiting for `database` relation to be available"))
