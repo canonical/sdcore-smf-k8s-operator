@@ -4,7 +4,6 @@
 
 """Charmed operator for the 5G SMF service for K8s."""
 
-
 import logging
 from ipaddress import IPv4Address
 from subprocess import check_output
@@ -51,6 +50,7 @@ FIVEG_NRF_RELATION_NAME = "fiveg_nrf"
 SDCORE_CONFIG_RELATION_NAME = "sdcore_config"
 TLS_RELATION_NAME = "certificates"
 DATABASE_RELATION_NAME = "database"
+WORKLOAD_VERSION_FILE_NAME = "/etc/workload-version"
 
 
 class SMFOperatorCharm(CharmBase):
@@ -155,6 +155,7 @@ class SMFOperatorCharm(CharmBase):
     def _on_collect_unit_status(self, event: CollectStatusEvent):  # noqa C901
         """Check the unit status and set to Unit when CollectStatusEvent is fired.
 
+        Also sets the unit workload version if present
         Args:
             event: CollectStatusEvent
         """
@@ -172,13 +173,15 @@ class SMFOperatorCharm(CharmBase):
             event.add_status(
                 BlockedStatus(f"Waiting for {', '.join(missing_relations)} relation(s)")
             )
-            logger.info("Waiting for %s  relation(s)", ', '.join(missing_relations))
+            logger.info("Waiting for %s  relation(s)", ", ".join(missing_relations))
             return
 
         if not self._container.can_connect():
             event.add_status(WaitingStatus("Waiting for container to be ready"))
             logger.info("Waiting for container to be ready")
             return
+
+        self.unit.set_workload_version(self._get_workload_version())
 
         if not self._database_is_available():
             event.add_status(WaitingStatus("Waiting for `database` relation to be available"))
@@ -269,10 +272,12 @@ class SMFOperatorCharm(CharmBase):
             list: missing relation names.
         """
         missing_relations = []
-        for relation in [FIVEG_NRF_RELATION_NAME,
-                         DATABASE_RELATION_NAME,
-                         TLS_RELATION_NAME,
-                         SDCORE_CONFIG_RELATION_NAME]:
+        for relation in [
+            FIVEG_NRF_RELATION_NAME,
+            DATABASE_RELATION_NAME,
+            TLS_RELATION_NAME,
+            SDCORE_CONFIG_RELATION_NAME,
+        ]:
             if not self._relation_created(relation):
                 missing_relations.append(relation)
         return missing_relations
@@ -456,6 +461,24 @@ class SMFOperatorCharm(CharmBase):
         self._container.push(path=f"{CERTS_DIR_PATH}/{CSR_NAME}", source=csr.decode().strip())
         logger.info("Pushed CSR to workload")
 
+    def _get_workload_version(self) -> str:
+        """Return the workload version.
+
+        Checks for the presence of /etc/workload-version file
+        and if present, returns the contents of that file. If
+        the file is not present, an empty string is returned.
+
+        Returns:
+            string: A human readable string representing the
+            version of the workload
+        """
+        if self._container.exists(path=f"{WORKLOAD_VERSION_FILE_NAME}"):
+            version_file_content = self._container.pull(
+                path=f"{WORKLOAD_VERSION_FILE_NAME}"
+            ).read()
+            return version_file_content
+        return ""
+
     def _configure_pebble(self, restart=False) -> None:
         """Configure and restart the workload if required.
 
@@ -468,9 +491,7 @@ class SMFOperatorCharm(CharmBase):
         """
         plan = self._container.get_plan()
         if plan.services != self._pebble_layer.services:
-            self._container.add_layer(
-                self._container_name, self._pebble_layer, combine=True
-            )
+            self._container.add_layer(self._container_name, self._pebble_layer, combine=True)
             self._container.replan()
             logger.info("New layer added: %s", self._pebble_layer)
         if restart:

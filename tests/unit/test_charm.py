@@ -2,6 +2,7 @@
 # See LICENSE file for licensing details.
 
 import logging
+import os
 from typing import Generator
 from unittest.mock import Mock, PropertyMock, patch
 
@@ -46,15 +47,13 @@ EXPECTED_UE_CONFIG_FILE_PATH = "src/uerouting.yaml"
 
 
 class TestCharm:
-
     patcher_check_output = patch("charm.check_output")
     patcher_nrf_url = patch(
-        "charms.sdcore_nrf_k8s.v0.fiveg_nrf.NRFRequires.nrf_url",
-        new_callable=PropertyMock
+        "charms.sdcore_nrf_k8s.v0.fiveg_nrf.NRFRequires.nrf_url", new_callable=PropertyMock
     )
     patcher_webui_url = patch(
         "charms.sdcore_webui_k8s.v0.sdcore_config.SdcoreConfigRequires.webui_url",
-        new_callable=PropertyMock
+        new_callable=PropertyMock,
     )
     patcher_is_resource_created = patch(
         "charms.data_platform_libs.v0.data_interfaces.DatabaseRequires.is_resource_created"
@@ -62,14 +61,18 @@ class TestCharm:
     patcher_generate_csr = patch("charm.generate_csr")
     patcher_generate_private_key = patch("charm.generate_private_key")
     patcher_get_assigned_certificates = patch(f"{CERTIFICATES_LIB}.get_assigned_certificates")  # noqa: E501
-    patcher_request_certificate_creation = patch(f"{CERTIFICATES_LIB}.request_certificate_creation")  # noqa: E501
+    patcher_request_certificate_creation = patch(
+        f"{CERTIFICATES_LIB}.request_certificate_creation"
+    )  # noqa: E501
 
     @pytest.fixture()
     def setup(self):
         self.mock_generate_csr = TestCharm.patcher_generate_csr.start()
         self.mock_generate_private_key = TestCharm.patcher_generate_private_key.start()
         self.mock_get_assigned_certificates = TestCharm.patcher_get_assigned_certificates.start()
-        self.mock_request_certificate_creation = TestCharm.patcher_request_certificate_creation.start()  # noqa: E501
+        self.mock_request_certificate_creation = (
+            TestCharm.patcher_request_certificate_creation.start()
+        )  # noqa: E501
         self.mock_is_resource_created = TestCharm.patcher_is_resource_created.start()
         self.mock_nrf_url = TestCharm.patcher_nrf_url.start()
         self.mock_webui_url = TestCharm.patcher_webui_url.start()
@@ -135,7 +138,6 @@ class TestCharm:
     @pytest.fixture()
     def nrf_relation_id(self) -> Generator[int, None, None]:
         relation_id = self.harness.add_relation(  # type:ignore
-
             relation_name=NRF_RELATION_NAME, remote_app="nrf-operator"
         )
         self.harness.add_relation_unit(relation_id=relation_id, remote_unit_name="nrf-operator/0")  # type:ignore
@@ -258,7 +260,7 @@ class TestCharm:
         mock_default_values,
         nrf_relation_id,
         certificates_relation_id,
-        sdcore_config_relation_id
+        sdcore_config_relation_id,
     ):
         root = self.harness.get_filesystem_root(self.container_name)
         (root / CERTIFICATE_PATH).write_text(CERTIFICATE)
@@ -347,7 +349,9 @@ class TestCharm:
         self.mock_nrf_url.return_value = None
         self.harness.charm._configure_sdcore_smf(event=Mock())
         self.harness.evaluate_status()
-        assert self.harness.model.unit.status == WaitingStatus("Waiting for NRF relation to be available")  # noqa: E501
+        assert self.harness.model.unit.status == WaitingStatus(
+            "Waiting for NRF relation to be available"
+        )  # noqa: E501
 
     def test_given_webui_data_not_available_when_configure_sdcore_smf_is_called_then_status_is_waiting(  # noqa: E501
         self,
@@ -362,14 +366,16 @@ class TestCharm:
         self.mock_webui_url.return_value = None
         self.harness.charm._configure_sdcore_smf(event=Mock())
         self.harness.evaluate_status()
-        assert self.harness.model.unit.status == WaitingStatus("Waiting for Webui data to be available")  # noqa: E501
+        assert self.harness.model.unit.status == WaitingStatus(
+            "Waiting for Webui data to be available"
+        )  # noqa: E501
 
     @pytest.mark.parametrize(
         "storage_name",
         [
             "certs",
             "config",
-        ]
+        ],
     )
     def test_storage_is_not_attached_when_configure_sdcore_smf_is_called_then_status_is_waiting(  # noqa: E501
         self, nrf_relation_id, certificates_relation_id, storage_name, sdcore_config_relation_id
@@ -380,7 +386,9 @@ class TestCharm:
         self.harness.charm._configure_sdcore_smf(event=Mock())
         self.harness.evaluate_status()
 
-        assert self.harness.model.unit.status == WaitingStatus("Waiting for storage to be attached")  # noqa: E501
+        assert self.harness.model.unit.status == WaitingStatus(
+            "Waiting for storage to be attached"
+        )  # noqa: E501
 
     def test_given_ip_not_available_when_configure_then_status_is_waiting(
         self, add_storage, nrf_relation_id, certificates_relation_id, sdcore_config_relation_id
@@ -391,7 +399,9 @@ class TestCharm:
 
         self.harness.container_pebble_ready(container_name=self.container_name)
         self.harness.evaluate_status()
-        assert self.harness.model.unit.status == WaitingStatus("Waiting for pod IP address to be available")  # noqa: E501
+        assert self.harness.model.unit.status == WaitingStatus(
+            "Waiting for pod IP address to be available"
+        )  # noqa: E501
 
     def test_given_certificate_is_not_stored_when_configure_sdcore_smf_then_status_is_waiting(  # noqa: E501
         self,
@@ -409,7 +419,9 @@ class TestCharm:
 
         self.harness.charm._configure_sdcore_smf(event=Mock())
         self.harness.evaluate_status()
-        assert self.harness.model.unit.status == WaitingStatus("Waiting for certificates to be stored")  # noqa: E501
+        assert self.harness.model.unit.status == WaitingStatus(
+            "Waiting for certificates to be stored"
+        )  # noqa: E501
 
     def test_given_config_files_and_relations_are_created_when_configure_sdcore_smf_is_called_then_status_is_active(  # noqa: E501
         self,
@@ -462,9 +474,7 @@ class TestCharm:
         root = self.harness.get_filesystem_root(self.container_name)
         (root / CERTIFICATE_PATH).write_text(CERTIFICATE)
         (root / UE_CONFIG_FILE_PATH).write_text(self._read_file(EXPECTED_UE_CONFIG_FILE_PATH))
-        (root / CONFIG_FILE_PATH).write_text(
-            self._read_file(EXPECTED_CONFIG_FILE_PATH)
-        )
+        (root / CONFIG_FILE_PATH).write_text(self._read_file(EXPECTED_CONFIG_FILE_PATH))
         config_modification_time = (root / CONFIG_FILE_PATH).stat().st_mtime
         self._create_database_relation_and_populate_data()
         self.harness.set_can_connect(container=self.container_name, val=True)
@@ -574,7 +584,6 @@ class TestCharm:
         mock_default_values,
         sdcore_config_relation_id,
     ):
-
         root = self.harness.get_filesystem_root(self.container_name)
         (root / PRIVATE_KEY_PATH).write_text(PRIVATE_KEY)
         (root / UE_CONFIG_FILE_PATH).write_text(self._read_file(EXPECTED_UE_CONFIG_FILE_PATH))
@@ -685,3 +694,31 @@ class TestCharm:
         self.mock_request_certificate_creation.assert_called_with(
             certificate_signing_request=CSR.encode()
         )
+
+    def test_given_no_workload_version_file_when_container_can_connect_then_workload_version_not_set(  # noqa: E501
+        self,
+        nrf_relation_id,
+        certificates_relation_id,
+        sdcore_config_relation_id,
+    ):
+        self._create_database_relation_and_populate_data()
+        self.harness.container_pebble_ready(container_name=self.container_name)
+        self.harness.evaluate_status()
+        version = self.harness.get_workload_version()
+        assert version == ""
+
+    def test_given_workload_version_file_when_container_can_connect_then_workload_version_set(
+        self,
+        nrf_relation_id,
+        certificates_relation_id,
+        sdcore_config_relation_id,
+    ):
+        self._create_database_relation_and_populate_data()
+        expected_version = "1.2.3"
+        root = self.harness.get_filesystem_root(self.container_name)
+        os.mkdir(f"{root}/etc")
+        (root / "etc/workload-version").write_text(expected_version)
+        self.harness.container_pebble_ready(container_name=self.container_name)
+        self.harness.evaluate_status()
+        version = self.harness.get_workload_version()
+        assert version == expected_version
