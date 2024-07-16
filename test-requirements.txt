@@ -22,7 +22,7 @@ charset-normalizer==3.3.2
     # via requests
 codespell==2.3.0
     # via -r test-requirements.in
-coverage[toml]==7.5.4
+coverage[toml]==7.6.0
     # via -r test-requirements.in
 cryptography==42.0.8
     # via paramiko
