@@ -24,8 +24,8 @@ DB_APPLICATION_NAME = "mongodb-k8s"
 DB_RELATION_NAME = "database"
 NRF_RELATION_NAME = "fiveg_nrf"
 WEBUI_URL = "sdcore-webui:9876"
-SDCORE_CONFIG_RELATION_NAME = "sdcore_config"
-WEBUI_APPLICATION_NAME = "sdcore-webui-operator"
+SDCORE_CONFIG_RELATION_NAME = "sdcore-config"
+NMS_APPLICATION_NAME = "sdcore-nms-operator"
 TLS_APPLICATION_NAME = "tls-certificates-operator"
 TLS_RELATION_NAME = "certificates"
 NAMESPACE = "whatever"
@@ -52,7 +52,7 @@ class TestCharm:
         "charms.sdcore_nrf_k8s.v0.fiveg_nrf.NRFRequires.nrf_url", new_callable=PropertyMock
     )
     patcher_webui_url = patch(
-        "charms.sdcore_webui_k8s.v0.sdcore_config.SdcoreConfigRequires.webui_url",
+        "charms.sdcore_nms_k8s.v0.sdcore_config.SdcoreConfigRequires.webui_url",
         new_callable=PropertyMock,
     )
     patcher_is_resource_created = patch(
@@ -157,14 +157,14 @@ class TestCharm:
     def sdcore_config_relation_id(self) -> Generator[int, None, None]:
         sdcore_config_relation_id = self.harness.add_relation(  # type:ignore
             relation_name=SDCORE_CONFIG_RELATION_NAME,
-            remote_app=WEBUI_APPLICATION_NAME,
+            remote_app=NMS_APPLICATION_NAME,
         )
         self.harness.add_relation_unit(  # type:ignore
-            relation_id=sdcore_config_relation_id, remote_unit_name=f"{WEBUI_APPLICATION_NAME}/0"
+            relation_id=sdcore_config_relation_id, remote_unit_name=f"{NMS_APPLICATION_NAME}/0"
         )
         self.harness.update_relation_data(  # type:ignore
             relation_id=sdcore_config_relation_id,
-            app_or_unit=WEBUI_APPLICATION_NAME,
+            app_or_unit=NMS_APPLICATION_NAME,
             key_values={
                 "webui_url": WEBUI_URL,
             },
@@ -251,7 +251,7 @@ class TestCharm:
         self.harness.charm._configure_sdcore_smf(event=Mock())
         self.harness.evaluate_status()
         assert self.harness.model.unit.status == BlockedStatus(
-            "Waiting for sdcore_config relation(s)"
+            "Waiting for sdcore-config relation(s)"
         )
 
     def test_given_smf_charm_in_active_status_when_nrf_relation_breaks_then_status_is_blocked(
@@ -305,7 +305,7 @@ class TestCharm:
         self.harness.remove_relation(sdcore_config_relation_id)
         self.harness.evaluate_status()
         assert self.harness.model.unit.status == BlockedStatus(
-            "Waiting for sdcore_config relation(s)"
+            "Waiting for sdcore-config relation(s)"
         )
 
     def test_given_container_cant_connect_when_configure_sdcore_smf_is_called_is_called_then_status_is_waiting(  # noqa: E501

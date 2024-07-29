@@ -36,7 +36,7 @@ output "metrics_endpoint" {
 }
 
 output "sdcore_config_endpoint" {
-  description = "Name of the endpoint used to integrate with the Webui."
-  value       = "sdcore_config"
+  description = "Name of the endpoint used to integrate with the NMS."
+  value       = "sdcore-config"
 }
 
