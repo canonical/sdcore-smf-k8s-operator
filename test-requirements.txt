@@ -161,7 +161,7 @@ traitlets==5.14.1
     # via
     #   ipython
     #   matplotlib-inline
-types-pyyaml==6.0.12.20240311
+types-pyyaml==6.0.12.20240724
     # via -r test-requirements.in
 types-setuptools==70.3.0.20240710
     # via -r test-requirements.in
