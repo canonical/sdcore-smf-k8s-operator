@@ -133,7 +133,7 @@ async def test_relate_and_wait_for_active_status(ops_test: OpsTest, deploy):
     await ops_test.model.integrate(relation1=APP_NAME, relation2=NRF_APP_NAME)
     await ops_test.model.integrate(relation1=APP_NAME, relation2=TLS_PROVIDER_APP_NAME)
     await ops_test.model.integrate(
-        relation1=f"{APP_NAME}:sdcore-config", relation2=f"{NMS_CHARM_NAME}:sdcore-config"
+        relation1=f"{APP_NAME}:sdcore_config", relation2=f"{NMS_CHARM_NAME}:sdcore_config"
     )
     await ops_test.model.integrate(
         relation1=f"{APP_NAME}:logging", relation2=GRAFANA_AGENT_APP_NAME
@@ -198,7 +198,7 @@ async def test_restore_nms_and_wait_for_active_status(ops_test: OpsTest, deploy)
         relation1=f"{NMS_CHARM_NAME}:auth_database", relation2=f"{DATABASE_APP_NAME}"
     )
     await ops_test.model.integrate(
-        relation1=f"{APP_NAME}:sdcore-config", relation2=f"{NMS_CHARM_NAME}:sdcore-config"
+        relation1=f"{APP_NAME}:sdcore_config", relation2=f"{NMS_CHARM_NAME}:sdcore_config"
     )
     await ops_test.model.wait_for_idle(apps=[APP_NAME], status="active", timeout=TIMEOUT)
 

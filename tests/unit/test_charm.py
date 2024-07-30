@@ -24,7 +24,7 @@ DB_APPLICATION_NAME = "mongodb-k8s"
 DB_RELATION_NAME = "database"
 NRF_RELATION_NAME = "fiveg_nrf"
 WEBUI_URL = "sdcore-webui:9876"
-SDCORE_CONFIG_RELATION_NAME = "sdcore-config"
+SDCORE_CONFIG_RELATION_NAME = "sdcore_config"
 NMS_APPLICATION_NAME = "sdcore-nms-operator"
 TLS_APPLICATION_NAME = "tls-certificates-operator"
 TLS_RELATION_NAME = "certificates"
@@ -251,7 +251,7 @@ class TestCharm:
         self.harness.charm._configure_sdcore_smf(event=Mock())
         self.harness.evaluate_status()
         assert self.harness.model.unit.status == BlockedStatus(
-            "Waiting for sdcore-config relation(s)"
+            "Waiting for sdcore_config relation(s)"
         )
 
     def test_given_smf_charm_in_active_status_when_nrf_relation_breaks_then_status_is_blocked(
@@ -305,7 +305,7 @@ class TestCharm:
         self.harness.remove_relation(sdcore_config_relation_id)
         self.harness.evaluate_status()
         assert self.harness.model.unit.status == BlockedStatus(
-            "Waiting for sdcore-config relation(s)"
+            "Waiting for sdcore_config relation(s)"
         )
 
     def test_given_container_cant_connect_when_configure_sdcore_smf_is_called_is_called_then_status_is_waiting(  # noqa: E501
