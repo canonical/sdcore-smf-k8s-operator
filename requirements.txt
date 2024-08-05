@@ -14,7 +14,7 @@ cffi==1.16.0
     # via cryptography
 click==8.1.7
     # via typer
-cosl==0.0.17
+cosl==0.0.19
     # via -r requirements.in
 cryptography==43.0.0
     # via -r requirements.in
@@ -50,7 +50,7 @@ pydantic-core==2.20.1
     # via pydantic
 pytest==8.3.2
     # via pytest-interface-tester
-pytest-interface-tester==2.0.1
+pytest-interface-tester==3.0.0
     # via -r requirements.in
 pyyaml==6.0.1
     # via
