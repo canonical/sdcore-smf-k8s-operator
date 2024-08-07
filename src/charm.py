@@ -9,16 +9,16 @@ from ipaddress import IPv4Address
 from subprocess import check_output
 from typing import List, Optional
 
-from charms.data_platform_libs.v0.data_interfaces import DatabaseRequires  # type: ignore[import]
-from charms.loki_k8s.v1.loki_push_api import LogForwarder  # type: ignore[import]
-from charms.prometheus_k8s.v0.prometheus_scrape import (  # type: ignore[import]  # noqa: E501
+from charms.data_platform_libs.v0.data_interfaces import DatabaseRequires
+from charms.loki_k8s.v1.loki_push_api import LogForwarder
+from charms.prometheus_k8s.v0.prometheus_scrape import (
     MetricsEndpointProvider,
 )
-from charms.sdcore_nrf_k8s.v0.fiveg_nrf import NRFRequires  # type: ignore[import]
-from charms.sdcore_webui_k8s.v0.sdcore_config import (  # type: ignore[import]
+from charms.sdcore_nrf_k8s.v0.fiveg_nrf import NRFRequires
+from charms.sdcore_webui_k8s.v0.sdcore_config import (
     SdcoreConfigRequires,
 )
-from charms.tls_certificates_interface.v3.tls_certificates import (  # type: ignore[import]
+from charms.tls_certificates_interface.v3.tls_certificates import (
     CertificateExpiringEvent,
     TLSCertificatesRequiresV3,
     generate_csr,
@@ -321,13 +321,19 @@ class SMFOperatorCharm(CharmBase):
         Returns:
             content (str): desired config file content
         """
+        if not self._nrf_requires.nrf_url:
+            return ""
+        if not (pod_ip := _get_pod_ip()):
+            return ""
+        if not self._webui_requires.webui_url:
+            return ""
         return self._render_config_file(
             database_url=self._get_database_data()["uris"].split(",")[0],
             database_name=DATABASE_NAME,
             smf_url=self._smf_hostname,
             smf_sbi_port=SMF_SBI_PORT,
             nrf_url=self._nrf_requires.nrf_url,
-            pod_ip=_get_pod_ip(),  # type: ignore[arg-type]
+            pod_ip=pod_ip,
             scheme="https",
             tls_key_path=f"{CERTS_DIR_PATH}/{PRIVATE_KEY_NAME}",
             tls_certificate_path=f"{CERTS_DIR_PATH}/{CERTIFICATE_NAME}",

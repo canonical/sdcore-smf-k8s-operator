@@ -9,7 +9,7 @@ from unittest.mock import Mock, PropertyMock, patch
 import pytest
 import yaml
 from charm import SMFOperatorCharm
-from charms.tls_certificates_interface.v3.tls_certificates import (  # type: ignore[import]
+from charms.tls_certificates_interface.v3.tls_certificates import (
     ProviderCertificate,
 )
 from ops import testing
@@ -93,7 +93,7 @@ class TestCharm:
         self.mock_generate_csr.return_value = CSR.encode()
 
     @pytest.fixture(autouse=True)
-    def harness(self, setup, request):
+    def setup_harness(self, setup, request):
         self.harness = testing.Harness(SMFOperatorCharm)
         self.harness.set_model_name(name=NAMESPACE)
         self.harness.set_leader(is_leader=True)
@@ -104,8 +104,8 @@ class TestCharm:
 
     @pytest.fixture()
     def add_storage(self) -> None:
-        self.harness.add_storage(storage_name="certs", attach=True)  # type:ignore
-        self.harness.add_storage(storage_name="config", attach=True)  # type:ignore
+        self.harness.add_storage(storage_name="certs", attach=True)
+        self.harness.add_storage(storage_name="config", attach=True)
 
     @staticmethod
     def _get_metadata() -> dict:
@@ -137,32 +137,32 @@ class TestCharm:
 
     @pytest.fixture()
     def nrf_relation_id(self) -> Generator[int, None, None]:
-        relation_id = self.harness.add_relation(  # type:ignore
+        relation_id = self.harness.add_relation(
             relation_name=NRF_RELATION_NAME, remote_app="nrf-operator"
         )
-        self.harness.add_relation_unit(relation_id=relation_id, remote_unit_name="nrf-operator/0")  # type:ignore
+        self.harness.add_relation_unit(relation_id=relation_id, remote_unit_name="nrf-operator/0")
         yield relation_id
 
     @pytest.fixture()
     def certificates_relation_id(self) -> Generator[int, None, None]:
-        relation_id = self.harness.add_relation(  # type:ignore
+        relation_id = self.harness.add_relation(
             relation_name=TLS_RELATION_NAME, remote_app=TLS_APPLICATION_NAME
         )
-        self.harness.add_relation_unit(  # type:ignore
+        self.harness.add_relation_unit(
             relation_id=relation_id, remote_unit_name=f"{TLS_APPLICATION_NAME}0"
         )
         yield relation_id
 
     @pytest.fixture()
     def sdcore_config_relation_id(self) -> Generator[int, None, None]:
-        sdcore_config_relation_id = self.harness.add_relation(  # type:ignore
+        sdcore_config_relation_id = self.harness.add_relation(
             relation_name=SDCORE_CONFIG_RELATION_NAME,
             remote_app=WEBUI_APPLICATION_NAME,
         )
-        self.harness.add_relation_unit(  # type:ignore
+        self.harness.add_relation_unit(
             relation_id=sdcore_config_relation_id, remote_unit_name=f"{WEBUI_APPLICATION_NAME}/0"
         )
-        self.harness.update_relation_data(  # type:ignore
+        self.harness.update_relation_data(
             relation_id=sdcore_config_relation_id,
             app_or_unit=WEBUI_APPLICATION_NAME,
             key_values={
@@ -173,11 +173,11 @@ class TestCharm:
 
     @pytest.fixture()
     def database_relation_id(self) -> Generator[int, None, None]:
-        relation_id = self.harness.add_relation(  # type:ignore
+        relation_id = self.harness.add_relation(
             relation_name=DB_RELATION_NAME,
             remote_app=DB_APPLICATION_NAME,
         )
-        self.harness.add_relation_unit(  # type:ignore
+        self.harness.add_relation_unit(
             relation_id=relation_id,
             remote_unit_name=f"{DB_APPLICATION_NAME}/0",
         )
@@ -189,11 +189,11 @@ class TestCharm:
         Returns:
             relation_id: ID of the created relation
         """
-        database_relation_id = self.harness.add_relation(  # type:ignore
+        database_relation_id = self.harness.add_relation(
             relation_name=DB_RELATION_NAME,
             remote_app=DB_APPLICATION_NAME,
         )
-        self.harness.update_relation_data(  # type:ignore
+        self.harness.update_relation_data(
             relation_id=database_relation_id,
             app_or_unit=DB_APPLICATION_NAME,
             key_values={
