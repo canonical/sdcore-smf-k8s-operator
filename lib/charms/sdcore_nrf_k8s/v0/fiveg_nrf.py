@@ -94,9 +94,9 @@ if __name__ == "__main__":
 """
 
 import logging
-from typing import Optional
+from typing import Any, Dict, Optional
 
-from interface_tester.schema_base import DataBagSchema  # type: ignore[import]
+from interface_tester.schema_base import DataBagSchema
 from ops.charm import CharmBase, CharmEvents, RelationBrokenEvent, RelationChangedEvent
 from ops.framework import EventBase, EventSource, Handle, Object
 from ops.model import Relation
@@ -110,7 +110,7 @@ LIBAPI = 0
 
 # Increment this PATCH version before using `charmcraft publish-lib` or reset
 # to 0 if you are raising the major API version
-LIBPATCH = 3
+LIBPATCH = 4
 
 PYDEPS = ["pydantic", "pytest-interface-tester"]
 
@@ -142,10 +142,10 @@ class ProviderAppData(BaseModel):
 class ProviderSchema(DataBagSchema):
     """Provider schema for fiveg_nrf."""
 
-    app: ProviderAppData
+    app_data: ProviderAppData
 
 
-def data_matches_provider_schema(data: dict) -> bool:
+def data_matches_provider_schema(data: Dict[str, Any]) -> bool:
     """Return whether data matches provider schema.
 
     Args:
@@ -155,7 +155,7 @@ def data_matches_provider_schema(data: dict) -> bool:
         bool: True if data matches provider schema, False otherwise.
     """
     try:
-        ProviderSchema(app=data)
+        ProviderSchema(app_data=ProviderAppData(**data))
         return True
     except ValidationError as e:
         logger.debug("Invalid data: %s", e)
@@ -197,7 +197,7 @@ class NRFRequirerCharmEvents(CharmEvents):
 class NRFRequires(Object):
     """Class to be instantiated by the NRF requirer charm."""
 
-    on = NRFRequirerCharmEvents()
+    on = NRFRequirerCharmEvents()  # type: ignore
 
     def __init__(self, charm: CharmBase, relation_name: str):
         """Init."""
