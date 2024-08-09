@@ -113,7 +113,7 @@ from ops.model import Relation
 from pydantic import BaseModel, Field, ValidationError
 
 # The unique Charmhub library identifier, never change it
-LIBID = "e2f454cc121f449bbaa8fb0fd5a9867b"
+LIBID = "87b8ff625f5544ad9985552df3fb6b6b"
 
 # Increment this major API version when introducing breaking changes
 LIBAPI = 0
