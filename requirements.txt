@@ -14,7 +14,7 @@ cffi==1.16.0
     # via cryptography
 click==8.1.7
     # via typer
-cosl==0.0.20
+cosl==0.0.22
     # via -r requirements.in
 cryptography==43.0.0
     # via -r requirements.in
@@ -65,6 +65,8 @@ rpds-py==0.18.0
     # via
     #   jsonschema
     #   referencing
+tenacity==9.0.0
+    # via cosl
 typer==0.7.0
     # via pytest-interface-tester
 typing-extensions==4.10.0
