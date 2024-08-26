@@ -14,6 +14,8 @@ configuration:
   enableDBStore: false
   enableUPFAdapter: false
   debugProfilePort: 5001
+  enableNrfCaching: true
+  nrfCacheEvictionInterval: 900
   mongodb:
     url: http://6.5.6.5
   kafkaInfo:
