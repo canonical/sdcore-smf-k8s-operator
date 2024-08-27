@@ -1,8 +1,9 @@
 codespell
 coverage[toml]
-juju==3.5.2.0
+juju
 pyright
 pytest
 pytest-asyncio==0.21.2
 pytest-operator
 ruff
+ops-scenario
