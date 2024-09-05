@@ -6,12 +6,13 @@ import unittest
 from unittest.mock import Mock, PropertyMock, patch
 
 import yaml
-from charm import SMFOperatorCharm
 from charms.tls_certificates_interface.v3.tls_certificates import (  # type: ignore[import]
     ProviderCertificate,
 )
 from ops import testing
 from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
+
+from charm import SMFOperatorCharm
 
 logger = logging.getLogger(__name__)
 
