@@ -20,7 +20,7 @@ cffi==1.17.0
     # via cryptography
 click==8.1.7
     # via typer
-cosl==0.0.28
+cosl==0.0.31
     # via -r requirements.in
 cryptography==43.0.1
     # via -r requirements.in
