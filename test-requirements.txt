@@ -68,9 +68,9 @@ oauthlib==3.2.2
     # via
     #   kubernetes
     #   requests-oauthlib
-ops==2.16.1
+ops==2.16.0
     # via ops-scenario
-ops-scenario==6.1.6
+ops-scenario==6.1.7
     # via -r test-requirements.in
 packaging==24.1
     # via
