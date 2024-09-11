@@ -18,7 +18,6 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
         certificates_relation = scenario.Relation(
             endpoint="certificates", interface="tls-certificates"
         )
-        database_relation = scenario.Relation(endpoint="database", interface="mongodb_client")
         sdcore_config_relation = scenario.Relation(
             endpoint="sdcore_config", interface="sdcore_config"
         )
@@ -26,39 +25,17 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
         state_in = scenario.State(
             leader=True,
             containers=[container],
-            relations=[certificates_relation, database_relation, sdcore_config_relation],
+            relations=[certificates_relation, sdcore_config_relation],
         )
 
         state_out = self.ctx.run("collect_unit_status", state_in)
 
         assert state_out.unit_status == BlockedStatus("Waiting for fiveg_nrf relation(s)")
 
-    def test_given_database_relation_not_created_when_collect_unit_status_then_status_is_blocked(
-        self,
-    ):
-        nrf_relation = scenario.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
-        sdcore_config_relation = scenario.Relation(
-            endpoint="sdcore_config", interface="sdcore_config"
-        )
-        certificates_relation = scenario.Relation(
-            endpoint="certificates", interface="tls-certificates"
-        )
-        container = scenario.Container(name="smf", can_connect=True)
-        state_in = scenario.State(
-            leader=True,
-            containers=[container],
-            relations=[nrf_relation, sdcore_config_relation, certificates_relation],
-        )
-
-        state_out = self.ctx.run("collect_unit_status", state_in)
-
-        assert state_out.unit_status == BlockedStatus("Waiting for database relation(s)")
-
     def test_given_certificates_relation_not_created_when_collect_unit_status_then_status_is_blocked(  # noqa: E501
         self,
     ):
         nrf_relation = scenario.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
-        database_relation = scenario.Relation(endpoint="database", interface="mongodb_client")
         sdcore_config_relation = scenario.Relation(
             endpoint="sdcore_config", interface="sdcore_config"
         )
@@ -66,7 +43,7 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
         state_in = scenario.State(
             leader=True,
             containers=[container],
-            relations=[nrf_relation, database_relation, sdcore_config_relation],
+            relations=[nrf_relation, sdcore_config_relation],
         )
 
         state_out = self.ctx.run("collect_unit_status", state_in)
@@ -76,7 +53,6 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
     def test_given_sdcore_config_relation_not_created_when_collect_unit_status_then_status_is_blocked(  # noqa: E501
         self,
     ):
-        database_relation = scenario.Relation(endpoint="database", interface="mongodb_client")
         nrf_relation = scenario.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
         certificates_relation = scenario.Relation(
             endpoint="certificates", interface="tls-certificates"
@@ -85,92 +61,16 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
         state_in = scenario.State(
             leader=True,
             containers=[container],
-            relations=[database_relation, nrf_relation, certificates_relation],
+            relations=[nrf_relation, certificates_relation],
         )
 
         state_out = self.ctx.run("collect_unit_status", state_in)
 
         assert state_out.unit_status == BlockedStatus("Waiting for sdcore_config relation(s)")
 
-    def test_given_relations_created_and_database_not_available_when_collect_unit_status_then_status_is_waiting(  # noqa: E501
-        self,
-    ):
-        with tempfile.TemporaryDirectory() as tempdir:
-            nrf_relation = scenario.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
-            database_relation = scenario.Relation(endpoint="database", interface="mongodb_client")
-            self.mock_db_fetch_relation_data.return_value = {database_relation.relation_id: None}
-            self.mock_db_is_resource_created.return_value = False
-            certificates_relation = scenario.Relation(
-                endpoint="certificates", interface="tls-certificates"
-            )
-            sdcore_config_relation = scenario.Relation(
-                endpoint="sdcore_config", interface="sdcore_config"
-            )
-            certs_mount = scenario.Mount(
-                location="/support/TLS",
-                src=tempdir,
-            )
-            config_mount = scenario.Mount(
-                location="/etc/smf",
-                src=tempdir,
-            )
-            container = scenario.Container(
-                name="smf",
-                can_connect=True,
-                layers={
-                    "smf": Layer(
-                        {
-                            "services": {
-                                "smf": {
-                                    "startup": "enabled",
-                                    "override": "replace",
-                                    "command": "/bin/smf --smfcfg /etc/smf/smfcfg.conf",
-                                    "environment": {
-                                        "GOTRACEBACK": "crash",
-                                        "GRPC_GO_LOG_VERBOSITY_LEVEL": "99",
-                                        "GRPC_GO_LOG_SEVERITY_LEVEL": "info",
-                                        "GRPC_TRACE": "all",
-                                        "GRPC_VERBOSITY": "DEBUG",
-                                        "POD_IP": "1.1.1.1",
-                                        "MANAGED_BY_CONFIG_POD": "true",
-                                    },
-                                }
-                            }
-                        }
-                    )
-                },
-                service_status={"smf": ServiceStatus.ACTIVE},
-                mounts={"certs": certs_mount, "config": config_mount},
-            )
-            state_in = scenario.State(
-                leader=True,
-                containers=[container],
-                relations=[
-                    nrf_relation,
-                    database_relation,
-                    certificates_relation,
-                    sdcore_config_relation,
-                ],
-            )
-            self.mock_check_output.return_value = b"1.1.1.1"
-            provider_certificate, private_key = example_cert_and_key(
-                relation_id=certificates_relation.relation_id
-            )
-            self.mock_get_assigned_certificate.return_value = (provider_certificate, private_key)
-
-            state_out = self.ctx.run("collect_unit_status", state_in)
-
-            assert state_out.unit_status == WaitingStatus(
-                "Waiting for `database` relation to be available"
-            )
-
     def test_given_nrf_data_not_available_when_collect_unit_status_then_status_is_waiting(
         self,
     ):
-        database_relation = scenario.Relation(endpoint="database", interface="mongodb_client")
-        self.mock_db_fetch_relation_data.return_value = {
-            database_relation.relation_id: {"uris": "abc.com"}
-        }
         certificates_relation = scenario.Relation(
             endpoint="certificates", interface="tls-certificates"
         )
@@ -183,13 +83,11 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
             leader=True,
             containers=[container],
             relations=[
-                database_relation,
                 certificates_relation,
                 sdcore_config_relation,
                 nrf_relation,
             ],
         )
-        self.mock_db_is_resource_created.return_value = True
         self.mock_nrf_url.return_value = ""
 
         state_out = self.ctx.run("collect_unit_status", state_in)
@@ -199,10 +97,6 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
     def test_given_webui_data_not_available_when_collect_unit_status_then_status_is_waiting(
         self,
     ):
-        database_relation = scenario.Relation(endpoint="database", interface="mongodb_client")
-        self.mock_db_fetch_relation_data.return_value = {
-            database_relation.relation_id: {"uris": "abc.com"}
-        }
         nrf_relation = scenario.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
         certificates_relation = scenario.Relation(
             endpoint="certificates", interface="tls-certificates"
@@ -215,13 +109,11 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
             leader=True,
             containers=[container],
             relations=[
-                database_relation,
                 nrf_relation,
                 certificates_relation,
                 sdcore_config_relation,
             ],
         )
-        self.mock_db_is_resource_created.return_value = True
         self.mock_sdcore_config_webui_url.return_value = ""
         self.mock_nrf_url.return_value = "http://nrf"
 
@@ -232,10 +124,6 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
     def test_given_storage_not_attached_when_collect_unit_status_then_status_is_waiting(
         self,
     ):
-        database_relation = scenario.Relation(endpoint="database", interface="mongodb_client")
-        self.mock_db_fetch_relation_data.return_value = {
-            database_relation.relation_id: {"uris": "abc.com"}
-        }
         nrf_relation = scenario.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
         certificates_relation = scenario.Relation(
             endpoint="certificates", interface="tls-certificates"
@@ -248,13 +136,11 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
             leader=True,
             containers=[container],
             relations=[
-                database_relation,
                 nrf_relation,
                 certificates_relation,
                 sdcore_config_relation,
             ],
         )
-        self.mock_db_is_resource_created.return_value = True
         self.mock_nrf_url.return_value = "http://nrf"
 
         state_out = self.ctx.run("collect_unit_status", state_in)
@@ -265,10 +151,6 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
         self,
     ):
         with tempfile.TemporaryDirectory() as tempdir:
-            database_relation = scenario.Relation(endpoint="database", interface="mongodb_client")
-            self.mock_db_fetch_relation_data.return_value = {
-                database_relation.relation_id: {"uris": "abc.com"}
-            }
             nrf_relation = scenario.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
             certificates_relation = scenario.Relation(
                 endpoint="certificates", interface="tls-certificates"
@@ -291,7 +173,6 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
                 leader=True,
                 containers=[container],
                 relations=[
-                    database_relation,
                     nrf_relation,
                     certificates_relation,
                     sdcore_config_relation,
@@ -310,10 +191,6 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
         self,
     ):
         with tempfile.TemporaryDirectory() as tempdir:
-            database_relation = scenario.Relation(endpoint="database", interface="mongodb_client")
-            self.mock_db_fetch_relation_data.return_value = {
-                database_relation.relation_id: {"uris": "abc.com"}
-            }
             nrf_relation = scenario.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
             sdcore_config_relation = scenario.Relation(
                 endpoint="sdcore_config", interface="sdcore_config"
@@ -341,7 +218,6 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
                 leader=True,
                 containers=[container],
                 relations=[
-                    database_relation,
                     nrf_relation,
                     certificates_relation,
                     sdcore_config_relation,
@@ -349,7 +225,6 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
             )
             self.mock_get_assigned_certificate.return_value = (None, None)
             self.mock_check_output.return_value = b"1.1.1.1"
-            self.mock_db_is_resource_created.return_value = True
             self.mock_nrf_url.return_value = "http://nrf"
             with open(f"{tempdir}/smf.csr", "w") as f:
                 f.write("whatever csr")
@@ -364,10 +239,6 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
         self,
     ):
         with tempfile.TemporaryDirectory() as tempdir:
-            database_relation = scenario.Relation(endpoint="database", interface="mongodb_client")
-            self.mock_db_fetch_relation_data.return_value = {
-                database_relation.relation_id: {"uris": "abc.com"}
-            }
             nrf_relation = scenario.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
             certificates_relation = scenario.Relation(
                 endpoint="certificates", interface="tls-certificates"
@@ -394,7 +265,6 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
                 leader=True,
                 containers=[container],
                 relations=[
-                    database_relation,
                     nrf_relation,
                     certificates_relation,
                     sdcore_config_relation,
@@ -405,7 +275,6 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
             )
             self.mock_get_assigned_certificate.return_value = (provider_certificate, private_key)
             self.mock_check_output.return_value = b"1.1.1.1"
-            self.mock_db_is_resource_created.return_value = True
             self.mock_nrf_url.return_value = "http://nrf"
 
             state_out = self.ctx.run("collect_unit_status", state_in)
@@ -416,10 +285,6 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
         self,
     ):
         with tempfile.TemporaryDirectory() as tempdir:
-            database_relation = scenario.Relation(endpoint="database", interface="mongodb_client")
-            self.mock_db_fetch_relation_data.return_value = {
-                database_relation.relation_id: {"uris": "abc.com"}
-            }
             nrf_relation = scenario.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
             certificates_relation = scenario.Relation(
                 endpoint="certificates", interface="tls-certificates"
@@ -467,7 +332,6 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
                 leader=True,
                 containers=[container],
                 relations=[
-                    database_relation,
                     nrf_relation,
                     certificates_relation,
                     sdcore_config_relation,
@@ -478,7 +342,6 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
             )
             self.mock_get_assigned_certificate.return_value = (provider_certificate, private_key)
             self.mock_check_output.return_value = b"1.1.1.1"
-            self.mock_db_is_resource_created.return_value = True
             self.mock_nrf_url.return_value = "http://nrf"
 
             state_out = self.ctx.run("collect_unit_status", state_in)
@@ -488,7 +351,6 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
     def test_given_no_workload_version_file_when_collect_unit_status_then_workload_version_not_set(
         self,
     ):
-        database_relation = scenario.Relation(endpoint="database", interface="mongodb_client")
         nrf_relation = scenario.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
         certificates_relation = scenario.Relation(
             endpoint="certificates", interface="tls-certificates"
@@ -501,7 +363,6 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
             leader=True,
             containers=[container],
             relations=[
-                database_relation,
                 nrf_relation,
                 certificates_relation,
                 sdcore_config_relation,
@@ -516,7 +377,6 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
         self,
     ):
         with tempfile.TemporaryDirectory() as tempdir:
-            database_relation = scenario.Relation(endpoint="database", interface="mongodb_client")
             nrf_relation = scenario.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
             certificates_relation = scenario.Relation(
                 endpoint="certificates", interface="tls-certificates"
@@ -538,7 +398,6 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
                 leader=True,
                 containers=[container],
                 relations=[
-                    database_relation,
                     nrf_relation,
                     certificates_relation,
                     sdcore_config_relation,

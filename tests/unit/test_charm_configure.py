@@ -16,10 +16,6 @@ class TestCharmConfigure(SMFUnitTestFixtures):
         self,
     ):
         with tempfile.TemporaryDirectory() as tempdir:
-            database_relation = scenario.Relation(endpoint="database", interface="mongodb_client")
-            self.mock_db_fetch_relation_data.return_value = {
-                database_relation.relation_id: {"uris": "http://6.5.6.5"}
-            }
             nrf_relation = scenario.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
             certificates_relation = scenario.Relation(
                 endpoint="certificates", interface="tls-certificates"
@@ -42,7 +38,6 @@ class TestCharmConfigure(SMFUnitTestFixtures):
                 leader=True,
                 containers=[container],
                 relations=[
-                    database_relation,
                     nrf_relation,
                     certificates_relation,
                     sdcore_config_relation,
@@ -54,7 +49,6 @@ class TestCharmConfigure(SMFUnitTestFixtures):
                 relation_id=certificates_relation.relation_id
             )
             self.mock_get_assigned_certificate.return_value = (provider_certificate, private_key)
-            self.mock_db_is_resource_created.return_value = True
             self.mock_nrf_url.return_value = "https://nrf:443"
             self.mock_sdcore_config_webui_url.return_value = "sdcore-webui:9876"
 
@@ -75,10 +69,6 @@ class TestCharmConfigure(SMFUnitTestFixtures):
         self,
     ):
         with tempfile.TemporaryDirectory() as tempdir:
-            database_relation = scenario.Relation(endpoint="database", interface="mongodb_client")
-            self.mock_db_fetch_relation_data.return_value = {
-                database_relation.relation_id: {"uris": "http://6.5.6.5"}
-            }
             nrf_relation = scenario.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
             certificates_relation = scenario.Relation(
                 endpoint="certificates", interface="tls-certificates"
@@ -101,7 +91,6 @@ class TestCharmConfigure(SMFUnitTestFixtures):
                 leader=True,
                 containers=[container],
                 relations=[
-                    database_relation,
                     nrf_relation,
                     certificates_relation,
                     sdcore_config_relation,
@@ -113,7 +102,6 @@ class TestCharmConfigure(SMFUnitTestFixtures):
                 relation_id=certificates_relation.relation_id
             )
             self.mock_get_assigned_certificate.return_value = (provider_certificate, private_key)
-            self.mock_db_is_resource_created.return_value = True
             self.mock_nrf_url.return_value = "https://nrf:443"
             self.mock_sdcore_config_webui_url.return_value = "sdcore-webui:9876"
             with open("tests/unit/expected_smfcfg.yaml", "r") as f:
@@ -130,10 +118,6 @@ class TestCharmConfigure(SMFUnitTestFixtures):
         self,
     ):
         with tempfile.TemporaryDirectory() as tempdir:
-            database_relation = scenario.Relation(endpoint="database", interface="mongodb_client")
-            self.mock_db_fetch_relation_data.return_value = {
-                database_relation.relation_id: {"uris": "http://dummy"}
-            }
             nrf_relation = scenario.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
             certificates_relation = scenario.Relation(
                 endpoint="certificates", interface="tls-certificates"
@@ -156,7 +140,6 @@ class TestCharmConfigure(SMFUnitTestFixtures):
                 leader=True,
                 containers=[container],
                 relations=[
-                    database_relation,
                     nrf_relation,
                     certificates_relation,
                     sdcore_config_relation,
@@ -167,7 +150,6 @@ class TestCharmConfigure(SMFUnitTestFixtures):
             )
             self.mock_get_assigned_certificate.return_value = (provider_certificate, private_key)
             self.mock_check_output.return_value = b"1.1.1.1"
-            self.mock_db_is_resource_created.return_value = True
             self.mock_nrf_url.return_value = "https://nrf:443"
 
             state_out = self.ctx.run(container.pebble_ready_event, state_in)
@@ -199,10 +181,6 @@ class TestCharmConfigure(SMFUnitTestFixtures):
         self,
     ):
         with tempfile.TemporaryDirectory() as tempdir:
-            database_relation = scenario.Relation(endpoint="database", interface="mongodb_client")
-            self.mock_db_fetch_relation_data.return_value = {
-                database_relation.relation_id: {"uris": "http://dummy"}
-            }
             nrf_relation = scenario.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
             certificates_relation = scenario.Relation(
                 endpoint="certificates", interface="tls-certificates"
@@ -227,7 +205,6 @@ class TestCharmConfigure(SMFUnitTestFixtures):
             state_in = scenario.State(
                 leader=True,
                 relations=[
-                    database_relation,
                     nrf_relation,
                     certificates_relation,
                     sdcore_config_relation,

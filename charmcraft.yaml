@@ -34,8 +34,6 @@ provides:
     interface: prometheus_scrape
 
 requires:
-  database:
-    interface: mongodb_client
   fiveg_nrf:
     interface: fiveg_nrf
   certificates:
