@@ -127,9 +127,6 @@ async def test_given_charm_is_built_when_deployed_then_status_is_blocked(
 @pytest.mark.abort_on_fail
 async def test_relate_and_wait_for_active_status(ops_test: OpsTest, deploy):
     assert ops_test.model
-    await ops_test.model.integrate(
-        relation1=f"{APP_NAME}:database", relation2=f"{DATABASE_APP_NAME}"
-    )
     await ops_test.model.integrate(relation1=APP_NAME, relation2=NRF_APP_NAME)
     await ops_test.model.integrate(relation1=APP_NAME, relation2=TLS_PROVIDER_APP_NAME)
     await ops_test.model.integrate(
