@@ -5,4 +5,4 @@ pydantic==2.9.1
 pytest-interface-tester
 jsonschema
 cryptography
-rpds-py==0.18.1
+rpds-py==0.19.1
