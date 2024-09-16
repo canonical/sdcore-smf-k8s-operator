@@ -19,7 +19,7 @@ resources:
   smf-image:
     type: oci-image
     description: OCI image for 5G SMF
-    upstream-source: ghcr.io/canonical/sdcore-smf:1.4.2
+    upstream-source: ghcr.io/canonical/sdcore-smf:1.5.2
 
 storage:
   config:
@@ -34,8 +34,6 @@ provides:
     interface: prometheus_scrape
 
 requires:
-  database:
-    interface: mongodb_client
   fiveg_nrf:
     interface: fiveg_nrf
   certificates:

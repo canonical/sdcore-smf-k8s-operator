@@ -8,11 +8,6 @@ output "app_name" {
 
 # Required integration endpoints
 
-output "database_endpoint" {
-  description = "Name of the endpoint to integrate with MongoDB using mongodb_client interface."
-  value       = "database"
-}
-
 output "certificates_endpoint" {
   description = "Name of the endpoint to get the X.509 certificate using tls-certificates interface."
   value       = "certificates"

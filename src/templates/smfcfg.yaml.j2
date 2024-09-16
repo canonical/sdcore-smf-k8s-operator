@@ -9,15 +9,12 @@ info:
   description: SMF initial local configuration
 
 configuration:
-  smfDBName: {{ database_name }}
   webuiUri: {{ webui_uri }}
   enableDBStore: false
   enableUPFAdapter: false
   debugProfilePort: 5001
   enableNrfCaching: true
   nrfCacheEvictionInterval: 900
-  mongodb:
-    url: {{ database_url }}
   kafkaInfo:
     enableKafka: false
   smfName: SMF
