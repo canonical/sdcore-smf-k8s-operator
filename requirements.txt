@@ -20,7 +20,7 @@ cffi==1.17.0
     # via cryptography
 click==8.1.7
     # via typer
-cosl==0.0.33
+cosl==0.0.34
     # via -r requirements.in
 cryptography==43.0.1
     # via -r requirements.in
@@ -53,7 +53,7 @@ ops==2.16.0
     #   -r requirements.in
     #   cosl
     #   ops-scenario
-ops-scenario==6.1.7
+ops-scenario==7.0.5
     # via pytest-interface-tester
 packaging==24.1
     # via pytest
@@ -61,16 +61,16 @@ pluggy==1.5.0
     # via pytest
 pycparser==2.22
     # via cffi
-pydantic==2.9.1
+pydantic==2.9.2
     # via
     #   -r requirements.in
     #   cosl
     #   pytest-interface-tester
-pydantic-core==2.23.3
+pydantic-core==2.23.4
     # via pydantic
 pytest==8.3.3
     # via pytest-interface-tester
-pytest-interface-tester==3.1.0
+pytest-interface-tester==3.1.1
     # via -r requirements.in
 pyyaml==6.0.2
     # via
