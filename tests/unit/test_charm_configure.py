@@ -25,11 +25,11 @@ class TestCharmConfigure(SMFUnitTestFixtures):
             )
             certs_mount = scenario.Mount(
                 location="/support/TLS",
-                src=tempdir,
+                source=tempdir,
             )
             config_mount = scenario.Mount(
                 location="/etc/smf",
-                src=tempdir,
+                source=tempdir,
             )
             container = scenario.Container(
                 name="smf", can_connect=True, mounts={"certs": certs_mount, "config": config_mount}
@@ -46,13 +46,13 @@ class TestCharmConfigure(SMFUnitTestFixtures):
             )
             self.mock_check_output.return_value = b"1.1.1.1"
             provider_certificate, private_key = example_cert_and_key(
-                relation_id=certificates_relation.relation_id
+                relation_id=certificates_relation.id
             )
             self.mock_get_assigned_certificate.return_value = (provider_certificate, private_key)
             self.mock_nrf_url.return_value = "https://nrf:443"
             self.mock_sdcore_config_webui_url.return_value = "sdcore-webui:9876"
 
-            self.ctx.run(container.pebble_ready_event, state_in)
+            self.ctx.run(self.ctx.on.pebble_ready(container=container), state_in)
 
             with open(tempdir + "/smf.pem", "r") as f:
                 assert f.read() == str(provider_certificate.certificate)
@@ -78,11 +78,11 @@ class TestCharmConfigure(SMFUnitTestFixtures):
             )
             certs_mount = scenario.Mount(
                 location="/support/TLS",
-                src=tempdir,
+                source=tempdir,
             )
             config_mount = scenario.Mount(
                 location="/etc/smf",
-                src=tempdir,
+                source=tempdir,
             )
             container = scenario.Container(
                 name="smf", can_connect=True, mounts={"certs": certs_mount, "config": config_mount}
@@ -99,7 +99,7 @@ class TestCharmConfigure(SMFUnitTestFixtures):
             )
             self.mock_check_output.return_value = b"1.1.1.1"
             provider_certificate, private_key = example_cert_and_key(
-                relation_id=certificates_relation.relation_id
+                relation_id=certificates_relation.id
             )
             self.mock_get_assigned_certificate.return_value = (provider_certificate, private_key)
             self.mock_nrf_url.return_value = "https://nrf:443"
@@ -110,7 +110,7 @@ class TestCharmConfigure(SMFUnitTestFixtures):
                 f.write(expected_config)
             config_modification_time = os.stat(tempdir + "/smfcfg.yaml").st_mtime
 
-            self.ctx.run(container.pebble_ready_event, state_in)
+            self.ctx.run(self.ctx.on.pebble_ready(container=container), state_in)
 
             assert os.stat(tempdir + "/smfcfg.yaml").st_mtime == config_modification_time
 
@@ -127,11 +127,11 @@ class TestCharmConfigure(SMFUnitTestFixtures):
             )
             certs_mount = scenario.Mount(
                 location="/support/TLS",
-                src=tempdir,
+                source=tempdir,
             )
             config_mount = scenario.Mount(
                 location="/etc/smf",
-                src=tempdir,
+                source=tempdir,
             )
             container = scenario.Container(
                 name="smf", can_connect=True, mounts={"certs": certs_mount, "config": config_mount}
@@ -146,15 +146,16 @@ class TestCharmConfigure(SMFUnitTestFixtures):
                 ],
             )
             provider_certificate, private_key = example_cert_and_key(
-                relation_id=certificates_relation.relation_id
+                relation_id=certificates_relation.id
             )
             self.mock_get_assigned_certificate.return_value = (provider_certificate, private_key)
             self.mock_check_output.return_value = b"1.1.1.1"
             self.mock_nrf_url.return_value = "https://nrf:443"
 
-            state_out = self.ctx.run(container.pebble_ready_event, state_in)
+            state_out = self.ctx.run(self.ctx.on.pebble_ready(container=container), state_in)
 
-            assert state_out.containers[0].layers == {
+            container = state_out.get_container("smf")
+            assert container.layers == {
                 "smf": Layer(
                     {
                         "services": {
@@ -194,11 +195,11 @@ class TestCharmConfigure(SMFUnitTestFixtures):
                 mounts={
                     "certs": scenario.Mount(
                         location="/support/TLS",
-                        src=tempdir,
+                        source=tempdir,
                     ),
                     "config": scenario.Mount(
                         location="/etc/smf",
-                        src=tempdir,
+                        source=tempdir,
                     ),
                 },
             )
@@ -214,7 +215,7 @@ class TestCharmConfigure(SMFUnitTestFixtures):
             self.mock_check_output.return_value = b"1.1.1.1"
             self.mock_nrf_url.return_value = "https://nrf:443"
             provider_certificate, private_key = example_cert_and_key(
-                relation_id=certificates_relation.relation_id
+                relation_id=certificates_relation.id
             )
             self.mock_get_assigned_certificate.return_value = (provider_certificate, private_key)
             with open(f"{tempdir}/smf.pem", "w") as f:
@@ -224,7 +225,7 @@ class TestCharmConfigure(SMFUnitTestFixtures):
             config_modification_time_smf_pem = os.stat(tempdir + "/smf.pem").st_mtime
             config_modification_time_smf_key = os.stat(tempdir + "/smf.key").st_mtime
 
-            self.ctx.run(container.pebble_ready_event, state_in)
+            self.ctx.run(self.ctx.on.pebble_ready(container=container), state_in)
 
             assert os.stat(tempdir + "/smf.pem").st_mtime == config_modification_time_smf_pem
             assert os.stat(tempdir + "/smf.key").st_mtime == config_modification_time_smf_key
