@@ -28,7 +28,7 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
             relations=[certificates_relation, sdcore_config_relation],
         )
 
-        state_out = self.ctx.run("collect_unit_status", state_in)
+        state_out = self.ctx.run(self.ctx.on.collect_unit_status(), state_in)
 
         assert state_out.unit_status == BlockedStatus("Waiting for fiveg_nrf relation(s)")
 
@@ -46,7 +46,7 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
             relations=[nrf_relation, sdcore_config_relation],
         )
 
-        state_out = self.ctx.run("collect_unit_status", state_in)
+        state_out = self.ctx.run(self.ctx.on.collect_unit_status(), state_in)
 
         assert state_out.unit_status == BlockedStatus("Waiting for certificates relation(s)")
 
@@ -64,7 +64,7 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
             relations=[nrf_relation, certificates_relation],
         )
 
-        state_out = self.ctx.run("collect_unit_status", state_in)
+        state_out = self.ctx.run(self.ctx.on.collect_unit_status(), state_in)
 
         assert state_out.unit_status == BlockedStatus("Waiting for sdcore_config relation(s)")
 
@@ -90,7 +90,7 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
         )
         self.mock_nrf_url.return_value = ""
 
-        state_out = self.ctx.run("collect_unit_status", state_in)
+        state_out = self.ctx.run(self.ctx.on.collect_unit_status(), state_in)
 
         assert state_out.unit_status == WaitingStatus("Waiting for NRF relation to be available")
 
@@ -117,7 +117,7 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
         self.mock_sdcore_config_webui_url.return_value = ""
         self.mock_nrf_url.return_value = "http://nrf"
 
-        state_out = self.ctx.run("collect_unit_status", state_in)
+        state_out = self.ctx.run(self.ctx.on.collect_unit_status(), state_in)
 
         assert state_out.unit_status == WaitingStatus("Waiting for Webui data to be available")
 
@@ -143,7 +143,7 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
         )
         self.mock_nrf_url.return_value = "http://nrf"
 
-        state_out = self.ctx.run("collect_unit_status", state_in)
+        state_out = self.ctx.run(self.ctx.on.collect_unit_status(), state_in)
 
         assert state_out.unit_status == WaitingStatus("Waiting for storage to be attached")
 
@@ -160,11 +160,11 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
             )
             certs_mount = scenario.Mount(
                 location="/support/TLS",
-                src=tempdir,
+                source=tempdir,
             )
             config_mount = scenario.Mount(
                 location="/etc/smf",
-                src=tempdir,
+                source=tempdir,
             )
             container = scenario.Container(
                 name="smf", can_connect=True, mounts={"certs": certs_mount, "config": config_mount}
@@ -181,7 +181,7 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
             self.mock_check_output.return_value = b""
             self.mock_nrf_url.return_value = "http://nrf"
 
-            state_out = self.ctx.run("collect_unit_status", state_in)
+            state_out = self.ctx.run(self.ctx.on.collect_unit_status(), state_in)
 
             assert state_out.unit_status == WaitingStatus(
                 "Waiting for pod IP address to be available"
@@ -200,11 +200,11 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
             )
             config_mount = scenario.Mount(
                 location="/etc/smf",
-                src=tempdir,
+                source=tempdir,
             )
             certs_mount = scenario.Mount(
                 location="/support/TLS",
-                src=tempdir,
+                source=tempdir,
             )
             container = scenario.Container(
                 name="smf",
@@ -229,7 +229,7 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
             with open(f"{tempdir}/smf.csr", "w") as f:
                 f.write("whatever csr")
 
-            state_out = self.ctx.run("collect_unit_status", state_in)
+            state_out = self.ctx.run(self.ctx.on.collect_unit_status(), state_in)
 
             assert state_out.unit_status == WaitingStatus(
                 "Waiting for certificates to be available"
@@ -248,18 +248,18 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
             )
             certs_mount = scenario.Mount(
                 location="/support/TLS",
-                src=tempdir,
+                source=tempdir,
             )
             config_mount = scenario.Mount(
                 location="/etc/smf",
-                src=tempdir,
+                source=tempdir,
             )
             container = scenario.Container(
                 name="smf",
                 layers={"smf": Layer({"services": {}})},
                 can_connect=True,
                 mounts={"certs": certs_mount, "config": config_mount},
-                service_status={"smf": ServiceStatus.INACTIVE},
+                service_statuses={"smf": ServiceStatus.INACTIVE},
             )
             state_in = scenario.State(
                 leader=True,
@@ -271,13 +271,13 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
                 ],
             )
             provider_certificate, private_key = example_cert_and_key(
-                relation_id=certificates_relation.relation_id
+                relation_id=certificates_relation.id
             )
             self.mock_get_assigned_certificate.return_value = (provider_certificate, private_key)
             self.mock_check_output.return_value = b"1.1.1.1"
             self.mock_nrf_url.return_value = "http://nrf"
 
-            state_out = self.ctx.run("collect_unit_status", state_in)
+            state_out = self.ctx.run(self.ctx.on.collect_unit_status(), state_in)
 
             assert state_out.unit_status == WaitingStatus("Waiting for SMF service to start")
 
@@ -294,11 +294,11 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
             )
             certs_mount = scenario.Mount(
                 location="/support/TLS",
-                src=tempdir,
+                source=tempdir,
             )
             config_mount = scenario.Mount(
                 location="/etc/smf",
-                src=tempdir,
+                source=tempdir,
             )
             container = scenario.Container(
                 name="smf",
@@ -326,7 +326,7 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
                 },
                 can_connect=True,
                 mounts={"certs": certs_mount, "config": config_mount},
-                service_status={"smf": ServiceStatus.ACTIVE},
+                service_statuses={"smf": ServiceStatus.ACTIVE},
             )
             state_in = scenario.State(
                 leader=True,
@@ -338,13 +338,13 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
                 ],
             )
             provider_certificate, private_key = example_cert_and_key(
-                relation_id=certificates_relation.relation_id
+                relation_id=certificates_relation.id
             )
             self.mock_get_assigned_certificate.return_value = (provider_certificate, private_key)
             self.mock_check_output.return_value = b"1.1.1.1"
             self.mock_nrf_url.return_value = "http://nrf"
 
-            state_out = self.ctx.run("collect_unit_status", state_in)
+            state_out = self.ctx.run(self.ctx.on.collect_unit_status(), state_in)
 
             assert state_out.unit_status == ActiveStatus()
 
@@ -369,7 +369,7 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
             ],
         )
 
-        state_out = self.ctx.run("collect_unit_status", state_in)
+        state_out = self.ctx.run(self.ctx.on.collect_unit_status(), state_in)
 
         assert state_out.workload_version == ""
 
@@ -386,7 +386,7 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
             )
             workload_version_mount = scenario.Mount(
                 location="/etc",
-                src=tempdir,
+                source=tempdir,
             )
             expected_version = "1.2.3"
             with open(f"{tempdir}/workload-version", "w") as f:
@@ -404,6 +404,6 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
                 ],
             )
 
-            state_out = self.ctx.run("collect_unit_status", state_in)
+            state_out = self.ctx.run(self.ctx.on.collect_unit_status(), state_in)
 
             assert state_out.workload_version == expected_version
