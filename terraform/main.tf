@@ -1,16 +1,20 @@
 # Copyright 2024 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-resource "juju_application" "sdcore-smf-k8s" {
+resource "juju_application" "smf" {
   name  = var.app_name
-  model = var.model_name
+  model = var.model
 
   charm {
-    name    = "sdcore-smf-k8s"
-    channel = var.channel
+    name     = "sdcore-smf-k8s"
+    channel  = var.channel
+    revision = var.revision
   }
 
-  units = 1
-  trust = true
+  config      = var.config
+  constraints = var.constraints
+  units       = var.units
+  resources   = var.resources
+  trust       = true
 }
 
