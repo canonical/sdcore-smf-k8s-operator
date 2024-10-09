@@ -3,35 +3,20 @@
 
 output "app_name" {
   description = "Name of the deployed application."
-  value       = juju_application.sdcore-smf-k8s.name
+  value       = juju_application.smf.name
 }
 
-# Required integration endpoints
-
-output "certificates_endpoint" {
-  description = "Name of the endpoint to get the X.509 certificate using tls-certificates interface."
-  value       = "certificates"
+output "requires" {
+  value = {
+    certificates  = "certificates"
+    fiveg_nrf     = "fiveg_nrf"
+    logging       = "logging"
+    sdcore_config = "sdcore_config"
+  }
 }
 
-output "fiveg_nrf_endpoint" {
-  description = "Name of the endpoint to provide fiveg_nrf interface."
-  value       = "fiveg_nrf"
+output "provides" {
+  value = {
+    metrics = "metrics-endpoint"
+  }
 }
-
-output "logging_endpoint" {
-  description = "Name of the endpoint used to integrate with the Logging provider."
-  value       = "logging"
-}
-
-# Provided integration endpoints
-
-output "metrics_endpoint" {
-  description = "Name of the endpoint to provide `prometheus_scrape` interface."
-  value       = "metrics-endpoint"
-}
-
-output "sdcore_config_endpoint" {
-  description = "Name of the endpoint used to integrate with the NMS."
-  value       = "sdcore_config"
-}
-
