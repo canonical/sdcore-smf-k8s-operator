@@ -4,7 +4,7 @@
 import os
 import tempfile
 
-import scenario
+from ops import testing
 
 from tests.unit.fixtures import SMFUnitTestFixtures
 
@@ -14,18 +14,18 @@ class TestCharmCertificatesRelationBroken(SMFUnitTestFixtures):
         self,
     ):
         with tempfile.TemporaryDirectory() as tempdir:
-            certificates_relation = scenario.Relation(
+            certificates_relation = testing.Relation(
                 endpoint="certificates", interface="tls-certificates"
             )
-            certs_mount = scenario.Mount(
+            certs_mount = testing.Mount(
                 location="/support/TLS",
                 source=tempdir,
             )
-            config_mount = scenario.Mount(
+            config_mount = testing.Mount(
                 location="/etc/smf",
                 source=tempdir,
             )
-            container = scenario.Container(
+            container = testing.Container(
                 name="smf",
                 can_connect=True,
                 mounts={"certs": certs_mount, "config": config_mount},
@@ -38,7 +38,7 @@ class TestCharmCertificatesRelationBroken(SMFUnitTestFixtures):
             with open(f"{tempdir}/smf.key", "w") as f:
                 f.write("private key")
 
-            state_in = scenario.State(
+            state_in = testing.State(
                 relations=[certificates_relation],
                 containers=[container],
                 leader=True,

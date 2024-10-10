@@ -3,8 +3,7 @@
 
 import tempfile
 
-import scenario
-from ops import ActiveStatus, BlockedStatus, WaitingStatus
+from ops import ActiveStatus, BlockedStatus, WaitingStatus, testing
 from ops.pebble import Layer, ServiceStatus
 
 from tests.unit.certificates_helpers import example_cert_and_key
@@ -15,14 +14,14 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
     def test_given_fiveg_nrf_relation_not_created_when_collect_unit_status_then_status_is_blocked(
         self,
     ):
-        certificates_relation = scenario.Relation(
+        certificates_relation = testing.Relation(
             endpoint="certificates", interface="tls-certificates"
         )
-        sdcore_config_relation = scenario.Relation(
+        sdcore_config_relation = testing.Relation(
             endpoint="sdcore_config", interface="sdcore_config"
         )
-        container = scenario.Container(name="smf", can_connect=True)
-        state_in = scenario.State(
+        container = testing.Container(name="smf", can_connect=True)
+        state_in = testing.State(
             leader=True,
             containers=[container],
             relations=[certificates_relation, sdcore_config_relation],
@@ -35,12 +34,12 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
     def test_given_certificates_relation_not_created_when_collect_unit_status_then_status_is_blocked(  # noqa: E501
         self,
     ):
-        nrf_relation = scenario.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
-        sdcore_config_relation = scenario.Relation(
+        nrf_relation = testing.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
+        sdcore_config_relation = testing.Relation(
             endpoint="sdcore_config", interface="sdcore_config"
         )
-        container = scenario.Container(name="smf", can_connect=True)
-        state_in = scenario.State(
+        container = testing.Container(name="smf", can_connect=True)
+        state_in = testing.State(
             leader=True,
             containers=[container],
             relations=[nrf_relation, sdcore_config_relation],
@@ -53,12 +52,12 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
     def test_given_sdcore_config_relation_not_created_when_collect_unit_status_then_status_is_blocked(  # noqa: E501
         self,
     ):
-        nrf_relation = scenario.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
-        certificates_relation = scenario.Relation(
+        nrf_relation = testing.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
+        certificates_relation = testing.Relation(
             endpoint="certificates", interface="tls-certificates"
         )
-        container = scenario.Container(name="smf", can_connect=True)
-        state_in = scenario.State(
+        container = testing.Container(name="smf", can_connect=True)
+        state_in = testing.State(
             leader=True,
             containers=[container],
             relations=[nrf_relation, certificates_relation],
@@ -71,15 +70,15 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
     def test_given_nrf_data_not_available_when_collect_unit_status_then_status_is_waiting(
         self,
     ):
-        certificates_relation = scenario.Relation(
+        certificates_relation = testing.Relation(
             endpoint="certificates", interface="tls-certificates"
         )
-        sdcore_config_relation = scenario.Relation(
+        sdcore_config_relation = testing.Relation(
             endpoint="sdcore_config", interface="sdcore_config"
         )
-        nrf_relation = scenario.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
-        container = scenario.Container(name="smf", can_connect=True)
-        state_in = scenario.State(
+        nrf_relation = testing.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
+        container = testing.Container(name="smf", can_connect=True)
+        state_in = testing.State(
             leader=True,
             containers=[container],
             relations=[
@@ -97,15 +96,15 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
     def test_given_webui_data_not_available_when_collect_unit_status_then_status_is_waiting(
         self,
     ):
-        nrf_relation = scenario.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
-        certificates_relation = scenario.Relation(
+        nrf_relation = testing.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
+        certificates_relation = testing.Relation(
             endpoint="certificates", interface="tls-certificates"
         )
-        sdcore_config_relation = scenario.Relation(
+        sdcore_config_relation = testing.Relation(
             endpoint="sdcore_config", interface="sdcore_config"
         )
-        container = scenario.Container(name="smf", can_connect=True)
-        state_in = scenario.State(
+        container = testing.Container(name="smf", can_connect=True)
+        state_in = testing.State(
             leader=True,
             containers=[container],
             relations=[
@@ -124,15 +123,15 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
     def test_given_storage_not_attached_when_collect_unit_status_then_status_is_waiting(
         self,
     ):
-        nrf_relation = scenario.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
-        certificates_relation = scenario.Relation(
+        nrf_relation = testing.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
+        certificates_relation = testing.Relation(
             endpoint="certificates", interface="tls-certificates"
         )
-        sdcore_config_relation = scenario.Relation(
+        sdcore_config_relation = testing.Relation(
             endpoint="sdcore_config", interface="sdcore_config"
         )
-        container = scenario.Container(name="smf", can_connect=True)
-        state_in = scenario.State(
+        container = testing.Container(name="smf", can_connect=True)
+        state_in = testing.State(
             leader=True,
             containers=[container],
             relations=[
@@ -151,25 +150,25 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
         self,
     ):
         with tempfile.TemporaryDirectory() as tempdir:
-            nrf_relation = scenario.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
-            certificates_relation = scenario.Relation(
+            nrf_relation = testing.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
+            certificates_relation = testing.Relation(
                 endpoint="certificates", interface="tls-certificates"
             )
-            sdcore_config_relation = scenario.Relation(
+            sdcore_config_relation = testing.Relation(
                 endpoint="sdcore_config", interface="sdcore_config"
             )
-            certs_mount = scenario.Mount(
+            certs_mount = testing.Mount(
                 location="/support/TLS",
                 source=tempdir,
             )
-            config_mount = scenario.Mount(
+            config_mount = testing.Mount(
                 location="/etc/smf",
                 source=tempdir,
             )
-            container = scenario.Container(
+            container = testing.Container(
                 name="smf", can_connect=True, mounts={"certs": certs_mount, "config": config_mount}
             )
-            state_in = scenario.State(
+            state_in = testing.State(
                 leader=True,
                 containers=[container],
                 relations=[
@@ -191,22 +190,22 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
         self,
     ):
         with tempfile.TemporaryDirectory() as tempdir:
-            nrf_relation = scenario.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
-            sdcore_config_relation = scenario.Relation(
+            nrf_relation = testing.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
+            sdcore_config_relation = testing.Relation(
                 endpoint="sdcore_config", interface="sdcore_config"
             )
-            certificates_relation = scenario.Relation(
+            certificates_relation = testing.Relation(
                 endpoint="certificates", interface="tls-certificates"
             )
-            config_mount = scenario.Mount(
+            config_mount = testing.Mount(
                 location="/etc/smf",
                 source=tempdir,
             )
-            certs_mount = scenario.Mount(
+            certs_mount = testing.Mount(
                 location="/support/TLS",
                 source=tempdir,
             )
-            container = scenario.Container(
+            container = testing.Container(
                 name="smf",
                 can_connect=True,
                 mounts={
@@ -214,7 +213,7 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
                     "certs": certs_mount,
                 },
             )
-            state_in = scenario.State(
+            state_in = testing.State(
                 leader=True,
                 containers=[container],
                 relations=[
@@ -239,29 +238,29 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
         self,
     ):
         with tempfile.TemporaryDirectory() as tempdir:
-            nrf_relation = scenario.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
-            certificates_relation = scenario.Relation(
+            nrf_relation = testing.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
+            certificates_relation = testing.Relation(
                 endpoint="certificates", interface="tls-certificates"
             )
-            sdcore_config_relation = scenario.Relation(
+            sdcore_config_relation = testing.Relation(
                 endpoint="sdcore_config", interface="sdcore_config"
             )
-            certs_mount = scenario.Mount(
+            certs_mount = testing.Mount(
                 location="/support/TLS",
                 source=tempdir,
             )
-            config_mount = scenario.Mount(
+            config_mount = testing.Mount(
                 location="/etc/smf",
                 source=tempdir,
             )
-            container = scenario.Container(
+            container = testing.Container(
                 name="smf",
                 layers={"smf": Layer({"services": {}})},
                 can_connect=True,
                 mounts={"certs": certs_mount, "config": config_mount},
                 service_statuses={"smf": ServiceStatus.INACTIVE},
             )
-            state_in = scenario.State(
+            state_in = testing.State(
                 leader=True,
                 containers=[container],
                 relations=[
@@ -285,22 +284,22 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
         self,
     ):
         with tempfile.TemporaryDirectory() as tempdir:
-            nrf_relation = scenario.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
-            certificates_relation = scenario.Relation(
+            nrf_relation = testing.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
+            certificates_relation = testing.Relation(
                 endpoint="certificates", interface="tls-certificates"
             )
-            sdcore_config_relation = scenario.Relation(
+            sdcore_config_relation = testing.Relation(
                 endpoint="sdcore_config", interface="sdcore_config"
             )
-            certs_mount = scenario.Mount(
+            certs_mount = testing.Mount(
                 location="/support/TLS",
                 source=tempdir,
             )
-            config_mount = scenario.Mount(
+            config_mount = testing.Mount(
                 location="/etc/smf",
                 source=tempdir,
             )
-            container = scenario.Container(
+            container = testing.Container(
                 name="smf",
                 layers={
                     "smf": Layer(
@@ -328,7 +327,7 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
                 mounts={"certs": certs_mount, "config": config_mount},
                 service_statuses={"smf": ServiceStatus.ACTIVE},
             )
-            state_in = scenario.State(
+            state_in = testing.State(
                 leader=True,
                 containers=[container],
                 relations=[
@@ -351,15 +350,15 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
     def test_given_no_workload_version_file_when_collect_unit_status_then_workload_version_not_set(
         self,
     ):
-        nrf_relation = scenario.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
-        certificates_relation = scenario.Relation(
+        nrf_relation = testing.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
+        certificates_relation = testing.Relation(
             endpoint="certificates", interface="tls-certificates"
         )
-        sdcore_config_relation = scenario.Relation(
+        sdcore_config_relation = testing.Relation(
             endpoint="sdcore_config", interface="sdcore_config"
         )
-        container = scenario.Container(name="smf", can_connect=True)
-        state_in = scenario.State(
+        container = testing.Container(name="smf", can_connect=True)
+        state_in = testing.State(
             leader=True,
             containers=[container],
             relations=[
@@ -377,24 +376,24 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
         self,
     ):
         with tempfile.TemporaryDirectory() as tempdir:
-            nrf_relation = scenario.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
-            certificates_relation = scenario.Relation(
+            nrf_relation = testing.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
+            certificates_relation = testing.Relation(
                 endpoint="certificates", interface="tls-certificates"
             )
-            sdcore_config_relation = scenario.Relation(
+            sdcore_config_relation = testing.Relation(
                 endpoint="sdcore_config", interface="sdcore_config"
             )
-            workload_version_mount = scenario.Mount(
+            workload_version_mount = testing.Mount(
                 location="/etc",
                 source=tempdir,
             )
             expected_version = "1.2.3"
             with open(f"{tempdir}/workload-version", "w") as f:
                 f.write(expected_version)
-            container = scenario.Container(
+            container = testing.Container(
                 name="smf", can_connect=True, mounts={"workload-version": workload_version_mount}
             )
-            state_in = scenario.State(
+            state_in = testing.State(
                 leader=True,
                 containers=[container],
                 relations=[

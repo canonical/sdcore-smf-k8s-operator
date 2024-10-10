@@ -4,7 +4,7 @@
 from unittest.mock import PropertyMock, patch
 
 import pytest
-import scenario
+from ops import testing
 
 from charm import SMFOperatorCharm
 
@@ -39,6 +39,6 @@ class SMFUnitTestFixtures:
 
     @pytest.fixture(autouse=True)
     def context(self):
-        self.ctx = scenario.Context(
+        self.ctx = testing.Context(
             charm_type=SMFOperatorCharm,
         )
