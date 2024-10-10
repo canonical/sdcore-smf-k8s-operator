@@ -4,7 +4,7 @@
 import os
 import tempfile
 
-import scenario
+from ops import testing
 from ops.pebble import Layer
 
 from tests.unit.certificates_helpers import example_cert_and_key
@@ -16,25 +16,25 @@ class TestCharmConfigure(SMFUnitTestFixtures):
         self,
     ):
         with tempfile.TemporaryDirectory() as tempdir:
-            nrf_relation = scenario.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
-            certificates_relation = scenario.Relation(
+            nrf_relation = testing.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
+            certificates_relation = testing.Relation(
                 endpoint="certificates", interface="tls-certificates"
             )
-            sdcore_config_relation = scenario.Relation(
+            sdcore_config_relation = testing.Relation(
                 endpoint="sdcore_config", interface="sdcore_config"
             )
-            certs_mount = scenario.Mount(
+            certs_mount = testing.Mount(
                 location="/support/TLS",
                 source=tempdir,
             )
-            config_mount = scenario.Mount(
+            config_mount = testing.Mount(
                 location="/etc/smf",
                 source=tempdir,
             )
-            container = scenario.Container(
+            container = testing.Container(
                 name="smf", can_connect=True, mounts={"certs": certs_mount, "config": config_mount}
             )
-            state_in = scenario.State(
+            state_in = testing.State(
                 leader=True,
                 containers=[container],
                 relations=[
@@ -42,7 +42,7 @@ class TestCharmConfigure(SMFUnitTestFixtures):
                     certificates_relation,
                     sdcore_config_relation,
                 ],
-                model=scenario.Model(name="whatever"),
+                model=testing.Model(name="whatever"),
             )
             self.mock_check_output.return_value = b"1.1.1.1"
             provider_certificate, private_key = example_cert_and_key(
@@ -69,25 +69,25 @@ class TestCharmConfigure(SMFUnitTestFixtures):
         self,
     ):
         with tempfile.TemporaryDirectory() as tempdir:
-            nrf_relation = scenario.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
-            certificates_relation = scenario.Relation(
+            nrf_relation = testing.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
+            certificates_relation = testing.Relation(
                 endpoint="certificates", interface="tls-certificates"
             )
-            sdcore_config_relation = scenario.Relation(
+            sdcore_config_relation = testing.Relation(
                 endpoint="sdcore_config", interface="sdcore_config"
             )
-            certs_mount = scenario.Mount(
+            certs_mount = testing.Mount(
                 location="/support/TLS",
                 source=tempdir,
             )
-            config_mount = scenario.Mount(
+            config_mount = testing.Mount(
                 location="/etc/smf",
                 source=tempdir,
             )
-            container = scenario.Container(
+            container = testing.Container(
                 name="smf", can_connect=True, mounts={"certs": certs_mount, "config": config_mount}
             )
-            state_in = scenario.State(
+            state_in = testing.State(
                 leader=True,
                 containers=[container],
                 relations=[
@@ -95,7 +95,7 @@ class TestCharmConfigure(SMFUnitTestFixtures):
                     certificates_relation,
                     sdcore_config_relation,
                 ],
-                model=scenario.Model(name="whatever"),
+                model=testing.Model(name="whatever"),
             )
             self.mock_check_output.return_value = b"1.1.1.1"
             provider_certificate, private_key = example_cert_and_key(
@@ -118,25 +118,25 @@ class TestCharmConfigure(SMFUnitTestFixtures):
         self,
     ):
         with tempfile.TemporaryDirectory() as tempdir:
-            nrf_relation = scenario.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
-            certificates_relation = scenario.Relation(
+            nrf_relation = testing.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
+            certificates_relation = testing.Relation(
                 endpoint="certificates", interface="tls-certificates"
             )
-            sdcore_config_relation = scenario.Relation(
+            sdcore_config_relation = testing.Relation(
                 endpoint="sdcore_config", interface="sdcore_config"
             )
-            certs_mount = scenario.Mount(
+            certs_mount = testing.Mount(
                 location="/support/TLS",
                 source=tempdir,
             )
-            config_mount = scenario.Mount(
+            config_mount = testing.Mount(
                 location="/etc/smf",
                 source=tempdir,
             )
-            container = scenario.Container(
+            container = testing.Container(
                 name="smf", can_connect=True, mounts={"certs": certs_mount, "config": config_mount}
             )
-            state_in = scenario.State(
+            state_in = testing.State(
                 leader=True,
                 containers=[container],
                 relations=[
@@ -182,28 +182,28 @@ class TestCharmConfigure(SMFUnitTestFixtures):
         self,
     ):
         with tempfile.TemporaryDirectory() as tempdir:
-            nrf_relation = scenario.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
-            certificates_relation = scenario.Relation(
+            nrf_relation = testing.Relation(endpoint="fiveg_nrf", interface="fiveg_nrf")
+            certificates_relation = testing.Relation(
                 endpoint="certificates", interface="tls-certificates"
             )
-            sdcore_config_relation = scenario.Relation(
+            sdcore_config_relation = testing.Relation(
                 endpoint="sdcore_config", interface="sdcore_config"
             )
-            container = scenario.Container(
+            container = testing.Container(
                 name="smf",
                 can_connect=True,
                 mounts={
-                    "certs": scenario.Mount(
+                    "certs": testing.Mount(
                         location="/support/TLS",
                         source=tempdir,
                     ),
-                    "config": scenario.Mount(
+                    "config": testing.Mount(
                         location="/etc/smf",
                         source=tempdir,
                     ),
                 },
             )
-            state_in = scenario.State(
+            state_in = testing.State(
                 leader=True,
                 relations=[
                     nrf_relation,
