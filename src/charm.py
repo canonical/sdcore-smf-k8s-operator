@@ -24,10 +24,17 @@ from charms.tls_certificates_interface.v4.tls_certificates import (
     TLSCertificatesRequiresV4,
 )
 from jinja2 import Environment, FileSystemLoader
-from ops import ActiveStatus, BlockedStatus, CollectStatusEvent, ModelError, Port, WaitingStatus
+from ops import (
+    ActiveStatus,
+    BlockedStatus,
+    CollectStatusEvent,
+    ModelError,
+    Port,
+    WaitingStatus,
+    main,
+)
 from ops.charm import CharmBase
 from ops.framework import EventBase
-from ops.main import main
 from ops.pebble import Layer
 
 logger = logging.getLogger(__name__)
