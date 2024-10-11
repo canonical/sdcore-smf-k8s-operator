@@ -19,7 +19,7 @@ from charms.sdcore_nms_k8s.v0.sdcore_config import (
 from charms.sdcore_nrf_k8s.v0.fiveg_nrf import NRFRequires
 from charms.tls_certificates_interface.v4.tls_certificates import (
     Certificate,
-    CertificateRequest,
+    CertificateRequestAttributes,
     PrivateKey,
     TLSCertificatesRequiresV4,
 )
@@ -270,8 +270,8 @@ class SMFOperatorCharm(CharmBase):
         return certificate_update_required or private_key_update_required
 
     @staticmethod
-    def _get_certificate_request() -> CertificateRequest:
-        return CertificateRequest(
+    def _get_certificate_request() -> CertificateRequestAttributes:
+        return CertificateRequestAttributes(
             common_name=CERTIFICATE_COMMON_NAME,
             sans_dns=frozenset([CERTIFICATE_COMMON_NAME]),
         )
