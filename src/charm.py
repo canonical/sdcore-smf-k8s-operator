@@ -83,6 +83,7 @@ class SMFOperatorCharm(CharmBase):
         )
         self._metrics_endpoint = MetricsEndpointProvider(
             self,
+            refresh_event=[self.on.update_status],
             jobs=[
                 {
                     "static_configs": [{"targets": [f"*:{PROMETHEUS_PORT}"]}],
