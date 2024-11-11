@@ -82,7 +82,7 @@ referencing==0.35.1
     # via
     #   jsonschema
     #   jsonschema-specifications
-rpds-py==0.18.1
+rpds-py==0.21.0
     # via
     #   -r requirements.in
     #   jsonschema
