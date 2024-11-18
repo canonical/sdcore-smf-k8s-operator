@@ -13,7 +13,7 @@ lxd init --auto
 
 Install MicroK8s:
 ```shell
-sudo snap install microk8s --channel=1.27-strict/stable
+sudo snap install microk8s --channel=1.31-strict/stable
 sudo usermod -a -G snap_microk8s $USER
 newgrp snap_microk8s
 sudo microk8s enable hostpath-storage
@@ -21,7 +21,7 @@ sudo microk8s enable hostpath-storage
 
 Install Juju and bootstrap a controller on the MicroK8S instance:
 ```shell
-sudo snap install juju --channel=3.1/stable
+sudo snap install juju --channel=3.5/stable
 juju bootstrap microk8s
 ```
 
