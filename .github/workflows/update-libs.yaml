@@ -11,5 +11,5 @@ permissions:
 jobs:
   update-lib:
     name: Check libraries
-    uses: canonical/sdcore-github-workflows/.github/workflows/update-libs.yaml@v1.0.0
+    uses: canonical/sdcore-github-workflows/.github/workflows/update-libs.yaml@v2.1.0
     secrets: inherit
