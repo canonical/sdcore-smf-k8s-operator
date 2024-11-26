@@ -53,7 +53,7 @@ jobs:
     if: ${{ github.ref_name == 'main' }}
     uses: canonical/sdcore-github-workflows/.github/workflows/publish-charm.yaml@v2.2.0
     with:
-      track-name: 1.5
+      track-name: 1.6
     secrets:
       CHARMCRAFT_AUTH: ${{ secrets.CHARMCRAFT_AUTH }}
 
@@ -68,7 +68,7 @@ jobs:
     uses: canonical/sdcore-github-workflows/.github/workflows/publish-charm.yaml@v2.2.0
     with:
       branch-name: ${{ github.ref_name }}
-      track-name: 1.5
+      track-name: 1.6
     secrets:
       CHARMCRAFT_AUTH: ${{ secrets.CHARMCRAFT_AUTH }}
 

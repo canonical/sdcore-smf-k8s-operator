@@ -15,6 +15,7 @@ on:
         description: Name of the charmhub track to publish
         options:
           - '1.5'
+          - '1.6'
           - latest
 
 

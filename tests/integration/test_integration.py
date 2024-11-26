@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 METADATA = yaml.safe_load(Path("./charmcraft.yaml").read_text())
 APP_NAME = METADATA["name"]
 NRF_APP_NAME = "sdcore-nrf-k8s"
-NRF_APP_CHANNEL = "1.5/edge"
+NRF_APP_CHANNEL = "1.6/edge"
 DATABASE_APP_NAME = "mongodb-k8s"
 DATABASE_APP_CHANNEL = "6/stable"
 TLS_PROVIDER_APP_NAME = "self-signed-certificates"
@@ -25,7 +25,7 @@ TLS_PROVIDER_APP_CHANNEL = "latest/stable"
 GRAFANA_AGENT_APP_NAME = "grafana-agent-k8s"
 GRAFANA_AGENT_APP_CHANNEL = "latest/stable"
 NMS_CHARM_NAME = "sdcore-nms-k8s"
-NMS_CHARM_CHANNEL = "1.5/edge"
+NMS_CHARM_CHANNEL = "1.6/edge"
 TIMEOUT = 1000
 
 
