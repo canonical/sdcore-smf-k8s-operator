@@ -1,3 +1,33 @@
+[project]
+name = "sdcore-smf-k8s-operator"
+version = "0.1.0"
+requires-python = ">=3.10"
+
+dependencies = [
+    "cosl",
+    "cryptography",
+    "jinja2",
+    "jsonschema",
+    "ops",
+    "pydantic<3.0",
+    "pytest-interface-tester",
+    "rpds-py==0.18.1",
+]
+
+[dependency-groups]
+test = [
+    "coverage[toml]",
+    "juju>=3.5.2.1",
+    "pytest",
+    "pytest-operator",
+    "pytest-asyncio<0.23",
+]
+dev = [
+    "codespell",
+    "pyright",
+    "ruff",
+]
+
 # Testing tools configuration
 [tool.coverage.run]
 branch = true
