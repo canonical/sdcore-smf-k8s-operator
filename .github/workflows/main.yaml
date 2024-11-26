@@ -3,7 +3,7 @@ name: Release 1.5 CI
 on:
   pull_request:
     branches:
-      - main
+      - v1.5
   push:
 
 jobs:
