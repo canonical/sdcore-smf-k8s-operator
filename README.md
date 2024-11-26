@@ -7,10 +7,10 @@ Charmed Operator for the Aether SD-Core Session Management Function (SMF) for K8
 
 ```bash
 juju deploy mongodb-k8s --channel 6/stable --trust
-juju deploy sdcore-smf-k8s --channel=1.5/edge
-juju deploy sdcore-nrf-k8s --channel=1.5/edge
+juju deploy sdcore-smf-k8s --channel=1.6/edge
+juju deploy sdcore-nrf-k8s --channel=1.6/edge
 juju deploy self-signed-certificates
-juju deploy sdcore-nms-k8s --channel=1.5/edge
+juju deploy sdcore-nms-k8s --channel=1.6/edge
 juju integrate sdcore-nms-k8s:common_database mongodb-k8s:database
 juju integrate sdcore-nms-k8s:auth_database mongodb-k8s:database
 juju integrate sdcore-nms-k8s:certificates self-signed-certificates:certificates
