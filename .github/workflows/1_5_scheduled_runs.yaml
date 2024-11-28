@@ -1,0 +1,57 @@
+name: Release 1.5 scheduled CI
+
+on:
+  schedule:
+    - cron: '0 6 * * 0'
+
+jobs:
+  codeql:
+    name: CodeQL Analysis
+    uses: canonical/sdcore-github-workflows/.github/workflows/codeql-analysis.yml@v2.2.0
+    with:
+      branch-name: "v1.5"
+
+  lint-report:
+    uses: canonical/sdcore-github-workflows/.github/workflows/lint-report.yaml@v2.2.0
+    with:
+      branch-name: "v1.5"
+
+  terraform-check:
+    uses: canonical/sdcore-github-workflows/.github/workflows/terraform.yaml@v2.2.0
+    with:
+      branch-name: "v1.5"
+
+  static-analysis:
+    uses: canonical/sdcore-github-workflows/.github/workflows/static-analysis.yaml@v2.2.0
+    with:
+      branch-name: "v1.5"
+
+  unit-tests-with-coverage:
+    uses: canonical/sdcore-github-workflows/.github/workflows/unit-test.yaml@v2.2.0
+    with:
+      branch-name: "v1.5"
+
+  build:
+    needs:
+      - lint-report
+      - static-analysis
+      - unit-tests-with-coverage
+    uses: canonical/sdcore-github-workflows/.github/workflows/build.yaml@v2.2.0
+    with:
+      branch-name: "v1.5"
+    secrets: inherit
+
+  integration-test:
+    needs:
+      - build
+    uses: canonical/sdcore-github-workflows/.github/workflows/integration-test.yaml@v2.2.0
+    with:
+      branch-name: "v1.5"
+      enable-metallb: true
+
+  update-lib:
+    name: Check libraries
+    uses: canonical/sdcore-github-workflows/.github/workflows/update-libs.yaml@v2.2.0
+    with:
+      branch-name: "v1.5"
+    secrets: inherit
