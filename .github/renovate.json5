@@ -20,15 +20,24 @@
   "packageRules": [
     // Later rules override earlier rules
     {
+      "matchBaseBranches": ["main", "v*"],
       "matchManagers": ["pep621"],
       "rangeStrategy": "bump",
       "groupName": "Python dependencies"
     },
     {
+      // Bumping "pytest-asyncio" over 0.23 breaks the integration tests
+      "matchPackageNames": ["pytest-asyncio"],
+      "matchUpdateTypes": ["minor"],
+      "enabled": false
+    },
+    {
+      "matchBaseBranches": ["main", "v*"],
       "matchManagers": ["github-actions"],
       "groupName": "GitHub actions"
     },
     {
+      "matchBaseBranches": ["main", "v*"],
       "matchManagers": ["terraform"],
       "groupName": "Terraform"
     },
