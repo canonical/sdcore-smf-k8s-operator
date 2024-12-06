@@ -547,7 +547,7 @@ class SMFOperatorCharm(CharmBase):
             tls_key_path (str): Path to the TLS private key
             tls_certificate_path (str): Path to the TLS certificate path
             webui_uri (str) : URL of the Webui.
-            log_level (str): Log level for the AMF.
+            log_level (str): Log level for the SMF.
 
         Returns:
             str: Config file content.
