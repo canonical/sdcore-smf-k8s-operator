@@ -7,7 +7,7 @@
 import logging
 from ipaddress import IPv4Address
 from subprocess import check_output
-from typing import List, Optional
+from typing import List, Optional, cast
 
 from charms.loki_k8s.v1.loki_push_api import LogForwarder
 from charms.prometheus_k8s.v0.prometheus_scrape import (
@@ -160,6 +160,13 @@ class SMFOperatorCharm(CharmBase):
             logger.info("Scaling is not implemented for this charm")
             return
 
+        if invalid_configs := self._get_invalid_configs():
+            event.add_status(
+                BlockedStatus(f"The following configurations are not valid: {invalid_configs}")
+            )
+            logger.info("The following configurations are not valid: %s", invalid_configs)
+            return
+
         if missing_relations := self._missing_relations():
             event.add_status(
                 BlockedStatus(f"Waiting for {', '.join(missing_relations)} relation(s)")
@@ -226,6 +233,9 @@ class SMFOperatorCharm(CharmBase):
             ready_to_configure: True if all conditions are met else False
         """
         if not self._container.can_connect():
+            return False
+
+        if self._get_invalid_configs():
             return False
 
         if self._missing_relations():
@@ -340,6 +350,8 @@ class SMFOperatorCharm(CharmBase):
             return ""
         if not self._webui_requires.webui_url:
             return ""
+        if not (log_level := self._get_log_level_config()):
+            return ""
         return self._render_config_file(
             smf_url=self._smf_hostname,
             smf_sbi_port=SMF_SBI_PORT,
@@ -349,6 +361,7 @@ class SMFOperatorCharm(CharmBase):
             tls_key_path=f"{CERTS_DIR_PATH}/{PRIVATE_KEY_NAME}",
             tls_certificate_path=f"{CERTS_DIR_PATH}/{CERTIFICATE_NAME}",
             webui_uri=self._webui_requires.webui_url,
+            log_level=log_level,
         )
 
     def _is_certificate_update_required(self, certificate: Certificate) -> bool:
@@ -438,6 +451,24 @@ class SMFOperatorCharm(CharmBase):
             return version_file_content
         return ""
 
+    def _get_invalid_configs(self) -> list[str]:
+        """Return list of invalid configurations.
+
+        Returns:
+            list: List of strings matching config keys.
+        """
+        invalid_configs = []
+        if not self._is_log_level_valid():
+            invalid_configs.append("log-level")
+        return invalid_configs
+
+    def _get_log_level_config(self) -> Optional[str]:
+        return cast(Optional[str], self.model.config.get("log-level"))
+
+    def _is_log_level_valid(self) -> bool:
+        log_level = self._get_log_level_config()
+        return log_level in ["debug", "info", "warn", "error", "fatal", "panic"]
+
     def _configure_pebble(self, restart=False) -> None:
         """Configure and restart the workload if required.
 
@@ -503,6 +534,7 @@ class SMFOperatorCharm(CharmBase):
         tls_key_path: str,
         tls_certificate_path: str,
         webui_uri: str,
+        log_level: str,
     ) -> str:
         """Render the config file content.
 
@@ -515,6 +547,7 @@ class SMFOperatorCharm(CharmBase):
             tls_key_path (str): Path to the TLS private key
             tls_certificate_path (str): Path to the TLS certificate path
             webui_uri (str) : URL of the Webui.
+            log_level (str): Log level for the AMF.
 
         Returns:
             str: Config file content.
@@ -530,6 +563,7 @@ class SMFOperatorCharm(CharmBase):
             tls_key_path=tls_key_path,
             tls_certificate_path=tls_certificate_path,
             webui_uri=webui_uri,
+            log_level=log_level,
         )
 
     def _config_file_content_matches(self, content: str) -> bool:
