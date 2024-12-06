@@ -66,3 +66,10 @@ parts:
       rustup default stable
       uv export --frozen --no-dev -o requirements.txt
       craftctl default
+
+config:
+  options:
+    log-level:
+      type: string
+      default: info
+      description: Log level for the SMF. One of `debug`, `info`, `warn`, `error`, `fatal`, `panic`.

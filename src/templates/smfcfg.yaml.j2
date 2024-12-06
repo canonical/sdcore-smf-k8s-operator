@@ -34,29 +34,6 @@ configuration:
     addr: {{ pod_ip }}
   nrfUri: {{ nrf_url }}
 
-# the kind of log output
-# debugLevel: how detailed to output, value: trace, debug, info, warn, error, fatal, panic
-# ReportCaller: enable the caller report or not, value: true or false
 logger:
   SMF:
-    debugLevel: info
-    ReportCaller: false
-  NAS:
-    debugLevel: info
-    ReportCaller: false
-  NGAP:
-    debugLevel: info
-    ReportCaller: false
-  Aper:
-    debugLevel: info
-    ReportCaller: false
-  PathUtil:
-    debugLevel: info
-    ReportCaller: false
-  OpenApi:
-    debugLevel: info
-    ReportCaller: false
-  PFCP:
-    debugLevel: info
-    ReportCaller: false
-
+    debugLevel: {{ log_level }}

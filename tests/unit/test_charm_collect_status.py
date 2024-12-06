@@ -11,6 +11,22 @@ from tests.unit.fixtures import SMFUnitTestFixtures
 
 
 class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
+    def test_given_invalid_log_level_config_when_collect_unit_status_then_status_is_blocked(
+        self,
+    ):
+        container = testing.Container(name="smf", can_connect=True)
+        state_in = testing.State(
+            leader=True,
+            config={"log-level": "invalid"},
+            containers={container},
+        )
+
+        state_out = self.ctx.run(self.ctx.on.collect_unit_status(), state_in)
+
+        assert state_out.unit_status == BlockedStatus(
+            "The following configurations are not valid: ['log-level']"
+        )
+
     def test_given_fiveg_nrf_relation_not_created_when_collect_unit_status_then_status_is_blocked(
         self,
     ):
