@@ -11,7 +11,7 @@ dependencies = [
     "ops",
     "pydantic<3.0",
     "pytest-interface-tester",
-    "rpds-py==0.21.0",
+    "rpds-py==0.22.3",
 ]
 
 [dependency-groups]
