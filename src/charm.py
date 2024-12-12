@@ -593,6 +593,7 @@ class SMFOperatorCharm(CharmBase):
             "PFCP_PORT_UPF": "8805",
             "MANAGED_BY_CONFIG_POD": "true",
             "POD_IP": _get_pod_ip(),
+            "GIN_MODE": "release",
         }
 
     @property

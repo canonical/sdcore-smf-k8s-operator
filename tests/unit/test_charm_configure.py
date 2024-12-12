@@ -171,6 +171,7 @@ class TestCharmConfigure(SMFUnitTestFixtures):
                                     "PFCP_PORT_UPF": "8805",
                                     "MANAGED_BY_CONFIG_POD": "true",
                                     "POD_IP": "1.1.1.1",
+                                    "GIN_MODE": "release",
                                 },
                             }
                         }
