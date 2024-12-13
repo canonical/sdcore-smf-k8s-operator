@@ -52,7 +52,7 @@ LIBAPI = 4
 
 # Increment this PATCH version before using `charmcraft publish-lib` or reset
 # to 0 if you are raising the major API version
-LIBPATCH = 2
+LIBPATCH = 3
 
 PYDEPS = ["cryptography", "pydantic"]
 
@@ -304,6 +304,37 @@ class Certificate:
             expiry_time=expiry_time,
             validity_start_time=validity_start_time,
         )
+
+    def matches_private_key(self, private_key: PrivateKey) -> bool:
+        """Check if this certificate matches a given private key.
+
+        Args:
+            private_key (PrivateKey): The private key to validate against.
+
+        Returns:
+            bool: True if the certificate matches the private key, False otherwise.
+        """
+        try:
+            cert_object = x509.load_pem_x509_certificate(self.raw.encode())
+            key_object = serialization.load_pem_private_key(
+                private_key.raw.encode(), password=None
+            )
+
+            cert_public_key = cert_object.public_key()
+            key_public_key = key_object.public_key()
+
+            if not isinstance(cert_public_key, rsa.RSAPublicKey):
+                logger.warning("Certificate does not use RSA public key")
+                return False
+
+            if not isinstance(key_public_key, rsa.RSAPublicKey):
+                logger.warning("Private key is not an RSA key")
+                return False
+
+            return cert_public_key.public_numbers() == key_public_key.public_numbers()
+        except Exception as e:
+            logger.warning("Failed to validate certificate and private key match: %s", e)
+            return False
 
 
 @dataclass(frozen=True)
@@ -1074,7 +1105,7 @@ class TLSCertificatesRequiresV4(Object):
         raise TLSCertificatesError("Invalid mode")
 
     @property
-    def private_key(self) -> PrivateKey | None:
+    def private_key(self) -> Optional[PrivateKey]:
         """Return the private key."""
         if not self._private_key_generated():
             return None
@@ -1243,7 +1274,7 @@ class TLSCertificatesRequiresV4(Object):
 
     def get_assigned_certificate(
         self, certificate_request: CertificateRequestAttributes
-    ) -> Tuple[ProviderCertificate | None, PrivateKey | None]:
+    ) -> Tuple[Optional[ProviderCertificate], Optional[PrivateKey]]:
         """Get the certificate that was assigned to the given certificate request."""
         for requirer_csr in self.get_csrs_from_requirer_relation_data():
             if certificate_request == CertificateRequestAttributes.from_csr(
@@ -1253,7 +1284,9 @@ class TLSCertificatesRequiresV4(Object):
                 return self._find_certificate_in_relation_data(requirer_csr), self.private_key
         return None, None
 
-    def get_assigned_certificates(self) -> Tuple[List[ProviderCertificate], PrivateKey | None]:
+    def get_assigned_certificates(
+        self,
+    ) -> Tuple[List[ProviderCertificate], Optional[PrivateKey]]:
         """Get a list of certificates that were assigned to this or app."""
         assigned_certificates = []
         for requirer_csr in self.get_csrs_from_requirer_relation_data():
@@ -1264,12 +1297,19 @@ class TLSCertificatesRequiresV4(Object):
     def _find_certificate_in_relation_data(
         self, csr: RequirerCertificateRequest
     ) -> Optional[ProviderCertificate]:
-        """Return the certificate that match the given CSR."""
+        """Return the certificate that matches the given CSR, validated against the private key."""
+        if not self.private_key:
+            return None
         for provider_certificate in self.get_provider_certificates():
             if (
                 provider_certificate.certificate_signing_request == csr.certificate_signing_request
                 and provider_certificate.certificate.is_ca == csr.is_ca
             ):
+                if not provider_certificate.certificate.matches_private_key(self.private_key):
+                    logger.warning(
+                        "Certificate does not match the private key. Ignoring invalid certificate."
+                    )
+                    continue
                 return provider_certificate
         return None
 
