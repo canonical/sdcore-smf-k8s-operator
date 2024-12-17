@@ -5,7 +5,8 @@ on:
     branches:
       - v1.5
   push:
-
+    branches:
+      - v1.5
 jobs:
   codeql:
     name: CodeQL Analysis
