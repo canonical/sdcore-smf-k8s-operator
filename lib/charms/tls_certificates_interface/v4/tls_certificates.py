@@ -52,7 +52,7 @@ LIBAPI = 4
 
 # Increment this PATCH version before using `charmcraft publish-lib` or reset
 # to 0 if you are raising the major API version
-LIBPATCH = 3
+LIBPATCH = 4
 
 PYDEPS = ["cryptography", "pydantic"]
 
@@ -1025,7 +1025,7 @@ class TLSCertificatesRequiresV4(Object):
         self._find_available_certificates()
         self._cleanup_certificate_requests()
 
-    def _mode_is_valid(self, mode) -> bool:
+    def _mode_is_valid(self, mode: Mode) -> bool:
         return mode in [Mode.UNIT, Mode.APP]
 
     def _on_secret_remove(self, event: SecretRemoveEvent) -> None:
