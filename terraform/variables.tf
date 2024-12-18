@@ -43,6 +43,12 @@ variable "revision" {
   default     = null
 }
 
+variable "base" {
+  description = "The operating system on which to deploy"
+  type        = string
+  default     = "ubuntu@24.04"
+}
+
 variable "units" {
   description = "Number of units to deploy"
   type        = number
