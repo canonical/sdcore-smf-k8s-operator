@@ -22,7 +22,7 @@ on:
 jobs:
   promote:
     name: Promote Charm
-    uses: canonical/sdcore-github-workflows/.github/workflows/promote.yaml@v2.3.0
+    uses: canonical/sdcore-github-workflows/.github/workflows/promote.yaml@v2.3.1
     with:
       promotion: ${{ github.event.inputs.promotion }}
       track-name: ${{ github.event.inputs.track-name }}
