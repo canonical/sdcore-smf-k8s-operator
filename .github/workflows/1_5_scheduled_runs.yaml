@@ -48,10 +48,3 @@ jobs:
     with:
       branch-name: "v1.5"
       enable-metallb: true
-
-  update-lib:
-    name: Check libraries
-    uses: canonical/sdcore-github-workflows/.github/workflows/update-libs.yaml@v2.3.1
-    with:
-      branch-name: "v1.5"
-    secrets: inherit
