@@ -57,10 +57,10 @@ class TestCharmConfigure(SMFUnitTestFixtures):
             with open(tempdir + "/smf.pem", "r") as f:
                 assert f.read() == str(provider_certificate.certificate)
 
-            with open(tempdir + "/smfcfg.yaml", "r") as f:
+            with open(tempdir + "/smf.yaml", "r") as f:
                 actual_config = f.read().strip()
 
-            with open("tests/unit/expected_smfcfg.yaml", "r") as f:
+            with open("tests/unit/expected_smf.yaml", "r") as f:
                 expected_config = f.read().strip()
 
             assert actual_config == expected_config
@@ -104,15 +104,15 @@ class TestCharmConfigure(SMFUnitTestFixtures):
             self.mock_get_assigned_certificate.return_value = (provider_certificate, private_key)
             self.mock_nrf_url.return_value = "https://nrf:443"
             self.mock_sdcore_config_webui_url.return_value = "sdcore-webui:9876"
-            with open("tests/unit/expected_smfcfg.yaml", "r") as f:
+            with open("tests/unit/expected_smf.yaml", "r") as f:
                 expected_config = f.read()
-            with open(tempdir + "/smfcfg.yaml", "w") as f:
+            with open(tempdir + "/smf.yaml", "w") as f:
                 f.write(expected_config)
-            config_modification_time = os.stat(tempdir + "/smfcfg.yaml").st_mtime
+            config_modification_time = os.stat(tempdir + "/smf.yaml").st_mtime
 
             self.ctx.run(self.ctx.on.pebble_ready(container=container), state_in)
 
-            assert os.stat(tempdir + "/smfcfg.yaml").st_mtime == config_modification_time
+            assert os.stat(tempdir + "/smf.yaml").st_mtime == config_modification_time
 
     def test_given_relations_available_and_config_pushed_when_pebble_ready_then_pebble_is_applied_correctly(  # noqa: E501
         self,
@@ -162,7 +162,7 @@ class TestCharmConfigure(SMFUnitTestFixtures):
                             "smf": {
                                 "startup": "enabled",
                                 "override": "replace",
-                                "command": "/bin/smf -smfcfg /etc/smf/smfcfg.yaml -uerouting /etc/smf/uerouting.yaml",  # noqa: E501
+                                "command": "/bin/smf -cfg /etc/smf/smf.yaml -uerouting /etc/smf/uerouting.yaml",  # noqa: E501
                                 "environment": {
                                     "PFCP_PORT_UPF": "8805",
                                     "MANAGED_BY_CONFIG_POD": "true",

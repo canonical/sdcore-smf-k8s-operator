@@ -324,7 +324,7 @@ class TestCharmCollectUnitStatus(SMFUnitTestFixtures):
                                 "smf": {
                                     "startup": "enabled",
                                     "override": "replace",
-                                    "command": "/bin/smf --smfcfg /etc/smf/smfcfg.conf",
+                                    "command": "/bin/smf --cfg /etc/smf/smf.conf",
                                     "environment": {
                                         "GOTRACEBACK": "crash",
                                         "GRPC_GO_LOG_VERBOSITY_LEVEL": "99",

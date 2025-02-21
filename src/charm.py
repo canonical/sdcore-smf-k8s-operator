@@ -40,7 +40,7 @@ from ops.pebble import Layer
 logger = logging.getLogger(__name__)
 
 BASE_CONFIG_PATH = "/etc/smf"
-CONFIG_FILE = "smfcfg.yaml"
+CONFIG_FILE = "smf.yaml"
 UEROUTING_CONFIG_FILE = "uerouting.yaml"
 SMF_SBI_PORT = 29502
 PFCP_PORT = 8805
@@ -553,7 +553,7 @@ class SMFOperatorCharm(CharmBase):
             str: Config file content.
         """
         jinja2_env = Environment(loader=FileSystemLoader("src/templates"))
-        template = jinja2_env.get_template("smfcfg.yaml.j2")
+        template = jinja2_env.get_template("smf.yaml.j2")
         return template.render(
             smf_url=smf_url,
             smf_sbi_port=smf_sbi_port,
@@ -604,7 +604,7 @@ class SMFOperatorCharm(CharmBase):
                     self._service_name: {
                         "override": "replace",
                         "startup": "enabled",
-                        "command": f"/bin/smf -smfcfg {BASE_CONFIG_PATH}/{CONFIG_FILE} "
+                        "command": f"/bin/smf -cfg {BASE_CONFIG_PATH}/{CONFIG_FILE} "
                         f"-uerouting {BASE_CONFIG_PATH}/{UEROUTING_CONFIG_FILE}",
                         "environment": self._environment_variables,
                     }
