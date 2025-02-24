@@ -19,7 +19,7 @@ resources:
   smf-image:
     type: oci-image
     description: OCI image for 5G SMF
-    upstream-source: ghcr.io/canonical/sdcore-smf:2.0.0
+    upstream-source: ghcr.io/canonical/sdcore-smf:2.0.2
 
 storage:
   config:
