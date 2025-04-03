@@ -1,0 +1,14 @@
+name: TiCS Static Analysis
+
+on:
+  schedule:
+    - cron: '0 7 * * 0' # Every Sunday at 7 am
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  tics-analysis:
+    uses: canonical/sdcore-github-workflows/.github/workflows/tics-scan.yaml@v2.3.2
+    with:
+      project: sdcore-amf-k8s-operator
+    secrets:
+      TICSAUTHTOKEN: ${{ secrets.TICSAUTHTOKEN }}
