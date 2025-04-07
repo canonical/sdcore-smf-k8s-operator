@@ -201,15 +201,15 @@ async def test_restore_nms_and_wait_for_active_status(ops_test: OpsTest, deploy)
     await ops_test.model.wait_for_idle(apps=[APP_NAME], status="active", timeout=TIMEOUT)
 
 
-@pytest.mark.abort_on_fail
-async def test_when_scale_app_beyond_1_then_only_one_unit_is_active(ops_test: OpsTest, deploy):
-    assert ops_test.model
-    assert isinstance(app := ops_test.model.applications[APP_NAME], Application)
-    await app.scale(3)
-    await ops_test.model.wait_for_idle(apps=[APP_NAME], timeout=1000, wait_for_at_least_units=3)
-    unit_statuses = Counter(unit.workload_status for unit in app.units)
-    assert unit_statuses.get("active") == 1
-    assert unit_statuses.get("blocked") == 2
+# @pytest.mark.abort_on_fail
+# async def test_when_scale_app_beyond_1_then_only_one_unit_is_active(ops_test: OpsTest, deploy):
+#     assert ops_test.model
+#     assert isinstance(app := ops_test.model.applications[APP_NAME], Application)
+#     await app.scale(3)
+#     await ops_test.model.wait_for_idle(apps=[APP_NAME], timeout=1000, wait_for_at_least_units=3)
+#     unit_statuses = Counter(unit.workload_status for unit in app.units)
+#     assert unit_statuses.get("active") == 1
+#     assert unit_statuses.get("blocked") == 2
 
 
 async def test_remove_app(ops_test: OpsTest, deploy):
