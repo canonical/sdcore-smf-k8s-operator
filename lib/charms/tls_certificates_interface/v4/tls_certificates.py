@@ -29,6 +29,7 @@ from typing import FrozenSet, List, MutableMapping, Optional, Tuple, Union
 
 import pydantic
 from cryptography import x509
+from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import ExtensionOID, NameOID
@@ -51,7 +52,7 @@ LIBAPI = 4
 
 # Increment this PATCH version before using `charmcraft publish-lib` or reset
 # to 0 if you are raising the major API version
-LIBPATCH = 16
+LIBPATCH = 17
 
 PYDEPS = [
     "cryptography>=43.0.0",
@@ -735,6 +736,32 @@ def generate_private_key(
         encryption_algorithm=serialization.NoEncryption(),
     )
     return PrivateKey.from_string(key_bytes.decode())
+
+
+def chain_has_valid_order(chain: List[str]) -> bool:
+    """Check if the chain has a valid order.
+
+    Validates that each certificate in the chain is properly signed by the next certificate.
+    The chain should be ordered from leaf to root, where each certificate is signed by
+    the next one in the chain.
+
+    Args:
+        chain (List[str]): List of certificates in PEM format, ordered from leaf to root
+
+    Returns:
+        bool: True if the chain has a valid order, False otherwise.
+    """
+    if len(chain) < 2:
+        return True
+
+    try:
+        for i in range(len(chain) - 1):
+            cert = x509.load_pem_x509_certificate(chain[i].encode())
+            issuer = x509.load_pem_x509_certificate(chain[i + 1].encode())
+            cert.verify_directly_issued_by(issuer)
+        return True
+    except (ValueError, TypeError, InvalidSignature):
+        return False
 
 
 def generate_csr(  # noqa: C901
@@ -1754,11 +1781,21 @@ class TLSCertificatesProvidesV4(Object):
         relation: Relation,
         provider_certificate: ProviderCertificate,
     ) -> None:
+        chain = [str(certificate) for certificate in provider_certificate.chain]
+        if chain[0] != str(provider_certificate.certificate):
+            logger.warning(
+                "The order of the chain from the TLS Certificates Provider is incorrect. "
+                "The leaf certificate should be the first element of the chain."
+            )
+        elif not chain_has_valid_order(chain):
+            logger.warning(
+                "The order of the chain from the TLS Certificates Provider is partially incorrect."
+            )
         new_certificate = _Certificate(
             certificate=str(provider_certificate.certificate),
             certificate_signing_request=str(provider_certificate.certificate_signing_request),
             ca=str(provider_certificate.ca),
-            chain=[str(certificate) for certificate in provider_certificate.chain],
+            chain=chain,
         )
         provider_certificates = self._load_provider_certificates(relation)
         if new_certificate in provider_certificates:
