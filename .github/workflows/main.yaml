@@ -13,37 +13,37 @@ on:
 jobs:
   codeql:
     name: CodeQL Analysis
-    uses: canonical/sdcore-github-workflows/.github/workflows/codeql-analysis.yml@v2.3.3
+    uses: canonical/sdcore-github-workflows/.github/workflows/codeql-analysis.yml@v2.3.7
 
   check-libraries:
-    uses: canonical/sdcore-github-workflows/.github/workflows/check-libraries.yaml@v2.3.3
+    uses: canonical/sdcore-github-workflows/.github/workflows/check-libraries.yaml@v2.3.7
     secrets:
       CHARMCRAFT_AUTH: ${{ secrets.CHARMCRAFT_AUTH }}
 
   lint-report:
-    uses: canonical/sdcore-github-workflows/.github/workflows/lint-report.yaml@v2.3.3
+    uses: canonical/sdcore-github-workflows/.github/workflows/lint-report.yaml@v2.3.7
 
   terraform-check:
-    uses: canonical/sdcore-github-workflows/.github/workflows/terraform.yaml@v2.3.3
+    uses: canonical/sdcore-github-workflows/.github/workflows/terraform.yaml@v2.3.7
 
   static-analysis:
-    uses: canonical/sdcore-github-workflows/.github/workflows/static-analysis.yaml@v2.3.3
+    uses: canonical/sdcore-github-workflows/.github/workflows/static-analysis.yaml@v2.3.7
 
   unit-tests-with-coverage:
-    uses: canonical/sdcore-github-workflows/.github/workflows/unit-test.yaml@v2.3.3
+    uses: canonical/sdcore-github-workflows/.github/workflows/unit-test.yaml@v2.3.7
 
   build:
     needs:
       - lint-report
       - static-analysis
       - unit-tests-with-coverage
-    uses: canonical/sdcore-github-workflows/.github/workflows/build.yaml@v2.3.3
+    uses: canonical/sdcore-github-workflows/.github/workflows/build.yaml@v2.3.7
     secrets: inherit
 
   integration-test:
     needs:
       - build
-    uses: canonical/sdcore-github-workflows/.github/workflows/integration-test.yaml@v2.3.3
+    uses: canonical/sdcore-github-workflows/.github/workflows/integration-test.yaml@v2.3.7
 
   publish-charm:
     name: Publish Charm
@@ -53,7 +53,7 @@ jobs:
       - unit-tests-with-coverage
       - integration-test
     if: ${{ github.ref_name == 'main' }}
-    uses: canonical/sdcore-github-workflows/.github/workflows/publish-charm.yaml@v2.3.3
+    uses: canonical/sdcore-github-workflows/.github/workflows/publish-charm.yaml@v2.3.7
     with:
       track-name: 1.6
     secrets:
@@ -67,7 +67,7 @@ jobs:
       - unit-tests-with-coverage
       - integration-test
     if: ${{ (github.ref_name != 'main') && (github.event_name == 'push') }}
-    uses: canonical/sdcore-github-workflows/.github/workflows/publish-charm.yaml@v2.3.3
+    uses: canonical/sdcore-github-workflows/.github/workflows/publish-charm.yaml@v2.3.7
     with:
       branch-name: ${{ github.ref_name }}
       track-name: 1.6

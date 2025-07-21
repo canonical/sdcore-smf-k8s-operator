@@ -7,6 +7,6 @@ on:
 jobs:
   update:
     name: Update Issue
-    uses: canonical/sdcore-github-workflows/.github/workflows/issues.yaml@v2.3.3
+    uses: canonical/sdcore-github-workflows/.github/workflows/issues.yaml@v2.3.7
     secrets:
       JIRA_URL: ${{ secrets.JIRA_URL }}
