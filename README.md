@@ -1,6 +1,10 @@
 # Aether SD-Core SMF Operator (k8s)
 [![CharmHub Badge](https://charmhub.io/sdcore-smf-k8s/badge.svg)](https://charmhub.io/sdcore-smf-k8s)
 
+> **:warning: Deprecation Notice!**
+>
+> This project is deprecated and will not receive further updates. Please refer to the upstream [Aether](https://aetherproject.org/) project to continue using Aether.
+
 Charmed Operator for the Aether SD-Core Session Management Function (SMF) for K8s.
 
 # Usage
